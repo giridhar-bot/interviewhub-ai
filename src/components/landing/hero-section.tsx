@@ -27,7 +27,7 @@ export function HeroSection() {
             AI-Powered Interview Preparation
           </Badge>
 
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
             Ace Every Interview with{" "}
             <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
               AI-Powered
@@ -35,7 +35,7 @@ export function HeroSection() {
             Preparation
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
+          <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:mt-6 sm:text-lg md:text-xl">
             The all-in-one platform for interview prep — notes, coding practice,
             AI mock interviews, resume review, roadmaps, and 50+ tech stacks.
             Everything you need in one place.
@@ -45,7 +45,7 @@ export function HeroSection() {
             <Link href="/auth/register">
               <Button
                 size="lg"
-                className="h-12 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-8 text-base font-semibold text-white shadow-lg shadow-violet-500/25 hover:from-violet-700 hover:to-indigo-700 hover:shadow-violet-500/40"
+                className="h-11 w-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-6 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:from-violet-700 hover:to-indigo-700 hover:shadow-violet-500/40 sm:h-12 sm:w-auto sm:px-8 sm:text-base"
               >
                 Start Preparing — It&apos;s Free
               </Button>
@@ -54,7 +54,7 @@ export function HeroSection() {
               <Button
                 variant="outline"
                 size="lg"
-                className="h-12 rounded-full px-8 text-base font-semibold"
+                className="h-11 w-full rounded-full px-6 text-sm font-semibold sm:h-12 sm:w-auto sm:px-8 sm:text-base"
               >
                 Explore Topics
               </Button>

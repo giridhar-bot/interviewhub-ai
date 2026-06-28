@@ -20,7 +20,7 @@ export function TrustedBySection() {
         >
           Trusted by engineers preparing for top companies
         </motion.p>
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8 sm:gap-y-4">
           {companies.map((company, i) => (
             <motion.span
               key={company}
@@ -28,7 +28,7 @@ export function TrustedBySection() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
-              className="text-lg font-semibold text-muted-foreground/50 transition-colors hover:text-foreground"
+              className="text-sm font-semibold text-muted-foreground/50 transition-colors hover:text-foreground sm:text-lg"
             >
               {company}
             </motion.span>

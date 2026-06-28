@@ -17,7 +17,7 @@ export function StatsSection() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="text-center"
             >
-              <div className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+              <div className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl md:text-4xl">
                 {stat.value}
               </div>
               <div className="mt-1 text-sm font-medium text-muted-foreground">

@@ -43,7 +43,7 @@ export function SearchSection() {
             <Input
               type="search"
               placeholder="Search topics, questions, roadmaps..."
-              className="h-14 rounded-2xl pl-12 pr-4 text-base shadow-lg border-border/50 focus:border-primary"
+              className="h-12 rounded-2xl pl-12 pr-4 text-sm shadow-lg border-border/50 focus:border-primary sm:h-14 sm:text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />

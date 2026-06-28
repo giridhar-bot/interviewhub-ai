@@ -27,7 +27,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "₹499",
+    price: "₹101",
     period: "/month",
     description: "Everything you need to crack any interview",
     features: [
@@ -84,7 +84,7 @@ export function PricingSection() {
           </p>
         </motion.div>
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-3">
+        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
@@ -94,18 +94,18 @@ export function PricingSection() {
               transition={{ duration: 0.5, delay: index * 0.15 }}
             >
               <Card
-                className={`relative h-full ${
+                className={`relative h-full overflow-visible ${
                   plan.popular
-                    ? "border-primary shadow-xl glow-violet"
+                    ? "border-primary shadow-xl glow-violet mt-4 sm:mt-0"
                     : "border-border/50"
                 }`}
               >
                 {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-gradient text-white px-4 py-1">
+                  <Badge className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 bg-brand-gradient text-white px-4 py-1 whitespace-nowrap">
                     Most Popular
                   </Badge>
                 )}
-                <CardHeader className="space-y-6 pt-8">
+                <CardHeader className="space-y-4 pt-8 sm:space-y-6">
                   <div>
                     <CardTitle className="text-xl">{plan.name}</CardTitle>
                     <CardDescription className="mt-1">
@@ -113,7 +113,7 @@ export function PricingSection() {
                     </CardDescription>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold">{plan.price}</span>
+                    <span className="text-3xl font-extrabold sm:text-4xl">{plan.price}</span>
                     {plan.period && (
                       <span className="text-muted-foreground">
                         {plan.period}

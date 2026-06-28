@@ -13,16 +13,16 @@ export function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-700 px-6 py-16 text-center shadow-2xl sm:px-16 sm:py-24"
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-700 px-5 py-12 text-center shadow-2xl sm:rounded-3xl sm:px-16 sm:py-24"
         >
           {/* Background Pattern */}
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#fff1_1px,transparent_1px),linear-gradient(to_bottom,#fff1_1px,transparent_1px)] bg-[size:24px_24px]" />
 
           <div className="relative">
-            <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
+            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl">
               Ready to Crack Your Next Interview?
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-lg text-violet-100">
+            <p className="mx-auto mt-3 max-w-xl text-sm text-violet-100 sm:mt-4 sm:text-lg">
               Join thousands of engineers who are preparing smarter with
               AI-powered tools, personalized roadmaps, and expert content.
             </p>
