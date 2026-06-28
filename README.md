@@ -1,36 +1,135 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# InterviewHub AI
+
+The world's most comprehensive interview preparation ecosystem for IT professionals. AI-powered learning, coding practice, mock interviews, resume building & more.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript (strict) |
+| Database | PostgreSQL 16 + Prisma 7 |
+| Auth | Auth.js v5 (JWT) |
+| Styling | Tailwind CSS v4 + shadcn/ui v4 |
+| State | TanStack React Query + Zustand |
+| AI | Vercel AI SDK v7 (OpenAI, Anthropic, Google) |
+| Cache | Redis (ioredis) |
+| Email | Resend |
+| Deployment | Vercel + Docker |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 22+
+- PostgreSQL 16
+- Redis 7
+
+### Quick Start
 
 ```bash
+# Clone & install
+git clone https://github.com/interviewhubai/interviewhub-ai.git
+cd interviewhub-ai
+npm install
+
+# Setup environment
+cp .env.example .env
+# Edit .env with your values
+
+# Setup database
+npx prisma generate
+npx prisma migrate dev
+
+# Run dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Docker
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+docker-compose up -d
+```
 
-## Learn More
+This starts PostgreSQL, Redis, and the app.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/           # Next.js App Router pages & API routes
+├── actions/       # Server Actions
+├── components/    # UI components (ui/, layout/, feedback/, domain/)
+├── config/        # Typed configuration (app, auth, ai, db, cache, mail, payment, storage)
+├── constants/     # App-wide constants
+├── features/      # Feature modules (auth, ai, learning, coding, etc.)
+├── hooks/         # Custom React hooks
+├── lib/           # Core libraries (prisma, auth, redis, seo, ai/, errors/)
+├── middleware/     # Middleware helpers (auth, rate-limit, csrf, logging)
+├── repositories/  # Database access layer (Prisma queries)
+├── schemas/       # Zod validation schemas
+├── services/      # Business logic & external API integrations
+├── stores/        # Zustand stores
+├── types/         # TypeScript type definitions
+└── utils/         # Utility functions (dates, strings, arrays, pagination)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Features
 
-## Deploy on Vercel
+- **Learning Hub** — Topics, articles, roadmaps, flashcards, cheat sheets, quizzes
+- **Company Prep** — Company profiles, interview questions, experiences, salary insights
+- **Coding Platform** — DSA problems, code editor, test cases, contests, leaderboard
+- **AI Tools** — AI tutor, mock interviews, HR interviews, resume review, code review
+- **Resume Builder** — Templates, ATS scoring, version history, portfolio
+- **Community** — Discussions, study groups, experiences, voting
+- **Dashboard** — Progress tracking, streaks, achievements, analytics
+- **Admin Panel** — User management, content moderation, feature flags, audit logs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | TypeScript type checking |
+| `npm run format` | Format with Prettier |
+| `npm run db:generate` | Generate Prisma client |
+| `npm run db:migrate` | Run database migrations |
+| `npm run db:studio` | Open Prisma Studio |
+| `npm run db:seed` | Seed database |
+
+## CI/CD
+
+- **CI** (`ci.yml`) — Lint → Typecheck → Build → Security audit on PRs
+- **CD** (`cd.yml`) — Auto-deploy to Vercel on merge to main/staging
+- **Preview** (`preview.yml`) — Preview deployments on PRs
+- **Release** (`release.yml`) — GitHub releases on version tags
+
+## Environment Variables
+
+See [`.env.example`](.env.example) for all required variables:
+
+- `DATABASE_URL` — PostgreSQL connection string
+- `REDIS_URL` — Redis connection string
+- `AUTH_SECRET` — NextAuth secret
+- `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_AI_API_KEY` — AI providers
+- `RESEND_API_KEY` — Email service
+- `NEXT_PUBLIC_APP_URL` — Public app URL
+
+## Architecture
+
+- **Feature-first** design with shared components
+- **Repository pattern** for database access
+- **Service layer** for business logic
+- **Server Components** by default
+- **Zod validation** everywhere
+- **RBAC** for authorization
+- See [`CLAUDE.md`](CLAUDE.md) for full development guide
+
+## License
+
+Private — All rights reserved.

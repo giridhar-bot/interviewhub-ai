@@ -1,0 +1,2598 @@
+// ══════════════════════════════════════════════════════════════
+// InterviewHub AI — Complete Prisma Schema (Part 4)
+// PostgreSQL · UUID PKs · Soft Delete · Audit Fields · 14 Domains
+// ══════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ═══════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════
+
+enum RoleType {
+  USER
+  PREMIUM
+  AUTHOR
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  DELETED
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuestionType {
+  THEORY
+  CODING
+  SYSTEM_DESIGN
+  BEHAVIORAL
+  HR
+}
+
+enum SubmissionStatus {
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT
+  MEMORY_LIMIT
+  RUNTIME_ERROR
+  COMPILE_ERROR
+  PENDING
+}
+
+enum InterviewResult {
+  SELECTED
+  REJECTED
+  IN_PROGRESS
+  WAITLISTED
+}
+
+enum NotificationType {
+  SYSTEM
+  COMMENT
+  VOTE
+  ACHIEVEMENT
+  FOLLOW
+  MENTION
+  STREAK
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  HARASSMENT
+  COPYRIGHT
+  OTHER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  ROLE_CHANGE
+  BAN
+  UNBAN
+}
+
+enum TechnologyStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TopicDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ArticleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CompanySize {
+  STARTUP
+  MID_SIZE
+  ENTERPRISE
+}
+
+enum InterviewRoundType {
+  ONLINE_ASSESSMENT
+  TECHNICAL
+  MACHINE_CODING
+  SYSTEM_DESIGN
+  MANAGERIAL
+  HR
+}
+
+enum EmploymentType {
+  INTERN
+  FULL_TIME
+  CONTRACT
+}
+
+enum ProgrammingLanguage {
+  JAVA
+  JAVASCRIPT
+  TYPESCRIPT
+  PYTHON
+  CPP
+  CSHARP
+  GO
+}
+
+enum QuizQuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  FILL_BLANK
+}
+
+enum AIConversationType {
+  DOUBT_SOLVER
+  MOCK_INTERVIEW
+  RESUME_REVIEW
+  HR_COACH
+  SYSTEM_DESIGN
+}
+
+enum ResumeStatus {
+  RESUME_DRAFT
+  RESUME_PUBLISHED
+  RESUME_ARCHIVED
+}
+
+enum SubscriptionPlan {
+  PLAN_FREE
+  PLAN_PRO
+  PLAN_ENTERPRISE
+}
+
+enum PaymentStatus {
+  PAYMENT_PENDING
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  PAYMENT_REFUNDED
+}
+
+// ═══════════════════════════════════════════════
+// 1. IDENTITY DOMAIN
+// ═══════════════════════════════════════════════
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  username      String?       @unique
+  displayName   String?
+  name          String?
+  image         String?
+  avatar        String?
+  bio           String?       @db.Text
+  password      String?
+  emailVerified DateTime?
+  role          RoleType      @default(USER)
+  plan          Plan          @default(FREE)
+  status        AccountStatus @default(ACTIVE)
+  xp            Int           @default(0)
+  streak        Int           @default(0)
+  github        String?
+  linkedin      String?
+  website       String?
+  timezone      String?       @default("UTC")
+  locale        String?       @default("en")
+  lastActiveAt  DateTime?
+  bannedAt      DateTime?
+  deletedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Auth
+  accounts      Account[]
+  sessions      Session[]
+
+  // Content
+  articles        Article[]       @relation("ArticleAuthor")
+  articleVersions ArticleVersion[]
+
+  // Learning
+  quizAttempts    QuizAttempt[]
+  revisionSessions RevisionSession[]
+  readingHistory   ReadingHistory[]
+  flashcardProgress FlashcardProgress[]
+  studySessions    StudySession[]
+  achievementProgress AchievementProgress[]
+
+  // Company / Interview
+  experiences     InterviewExperience[]
+  experienceVotes ExperienceVote[]
+  salaryInsights  SalaryInsight[]
+  preparationPlans PreparationPlan[]
+
+  // Coding
+  submissions   Submission[]
+  contestSubs   ContestSubmission[]
+  contestParticipants ContestParticipant[]
+
+  // AI
+  aiConversations  AITutorConversation[]
+  mockInterviews   MockInterview[]
+  resumeReviews    ResumeReview[]
+  recommendations  LearningRecommendation[]
+  studyPlans       StudyPlan[]
+
+  // Resume
+  resumes Resume[]
+
+  // Community
+  posts         Post[]
+  comments      Comment[]
+  votes         Vote[]
+  bookmarks     Bookmark[]
+  collections   Collection[]
+  following     Follow[]      @relation("FollowingUser")
+  followers     Follow[]      @relation("FollowedUser")
+  notifications Notification[] @relation("NotificationRecipient")
+  sentNotifications Notification[] @relation("NotificationActor")
+
+  // Progress
+  learningProgress LearningProgress[]
+  roadmapProgress  RoadmapProgress[]
+  articleProgress  ArticleProgress[]
+  quizProgress     QuizProgress[]
+  codingProgress   CodingProgress[]
+  dailyGoals       DailyGoal[]
+  weeklyGoals      WeeklyGoal[]
+  xpHistory        XPHistory[]
+  learningStreaks   LearningStreak[]
+  userBadges       UserBadge[]
+  userAchievements UserAchievement[]
+  userProgress     UserProgress[]
+
+  // Admin
+  auditLogs     AuditLog[]
+  reports       Report[]        @relation("ReportAuthor")
+  reportedItems Report[]        @relation("ReportTarget")
+
+  // Analytics
+  pageViews       PageView[]
+  analyticsEvents AnalyticsEvent[]
+
+  // Part 22.4A — AI/Resume
+  portfolios             Portfolio[]
+  hrInterviewSessions    HRInterviewSession[]
+  interviewAnalytics     InterviewAnalytics?
+  aiUsageHistory         AIUsageHistory[]
+  aiRecommendationHistory AIRecommendationHistory[]
+
+  // Part 22.4B — Community
+  studyGroups        StudyGroup[]
+  studyGroupMembers  StudyGroupMember[]
+
+  // Part 22.5A — Subscription
+  subscriptions Subscription[]
+  payments      Payment[]
+
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── RBAC ───────────────────────────────────
+
+model RoleModel {
+  id          String           @id @default(uuid())
+  name        RoleType         @unique
+  description String?
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  key         String           @unique
+  description String?
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       RoleModel  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ═══════════════════════════════════════════════
+// 2. LEARNING DOMAIN
+// ═══════════════════════════════════════════════
+
+model Technology {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  slug        String           @unique
+  icon        String?
+  color       String?
+  description String?
+  order       Int              @default(0)
+  status      TechnologyStatus @default(ACTIVE)
+
+  topics   Topic[]
+  roadmaps Roadmap[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([slug])
+  @@index([status])
+  @@map("technologies")
+}
+
+model Topic {
+  id            String          @id @default(uuid())
+  name          String          @unique
+  slug          String          @unique
+  description   String?         @db.Text
+  icon          String?
+  category      String
+  technologyId  String?
+  parentTopicId String?
+  difficulty    TopicDifficulty?
+  estimatedHours Int?
+  order         Int             @default(0)
+  status        ContentStatus   @default(PUBLISHED)
+  deletedAt     DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  technology Technology? @relation(fields: [technologyId], references: [id], onDelete: Cascade)
+  parent     Topic?      @relation("TopicHierarchy", fields: [parentTopicId], references: [id])
+  children   Topic[]     @relation("TopicHierarchy")
+
+  subTopics      SubTopic[]
+  articles       Article[]
+  questions      Question[]
+  roadmaps       Roadmap[]
+  roadmapSteps   RoadmapStep[]
+  cheatSheets    CheatSheet[]
+  flashcardDecks FlashcardDeck[]
+  quizzes        Quiz[]
+  learningProgress LearningProgress[]
+  learningResources LearningResource[]
+  interviewQuestions InterviewQuestionDB[]
+  studySessions  StudySession[]
+  revisionSessions RevisionSession[]
+  recommendations LearningRecommendation[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([technologyId])
+  @@map("topics")
+}
+
+model SubTopic {
+  id          String        @id @default(uuid())
+  name        String
+  slug        String        @unique
+  description String?       @db.Text
+  topicId     String
+  order       Int           @default(0)
+  status      ContentStatus @default(PUBLISHED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  topic    Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  articles Article[]
+
+  @@index([topicId])
+  @@index([slug])
+  @@map("sub_topics")
+}
+
+model Article {
+  id               String        @id @default(uuid())
+  title            String
+  slug             String        @unique
+  content          String        @db.Text
+  excerpt          String?       @db.Text
+  shortDescription String?
+  coverImage       String?
+  topicId          String
+  subTopicId       String?
+  authorId         String?
+  status           ContentStatus @default(DRAFT)
+  featured         Boolean       @default(false)
+  views            Int           @default(0)
+  readTime         Int           @default(5)
+  version          Int           @default(1)
+  tags             String[]
+  deletedAt        DateTime?
+  createdBy        String?
+  updatedBy        String?
+  publishedAt      DateTime?
+  lastReviewedAt   DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  topic      Topic           @relation(fields: [topicId], references: [id])
+  subTopic   SubTopic?       @relation(fields: [subTopicId], references: [id])
+  author     User?           @relation("ArticleAuthor", fields: [authorId], references: [id])
+  versions   ArticleVersion[]
+  comments   Comment[]
+  progress   ArticleProgress[]
+
+  // Part 22.2A relations
+  articleTags      ArticleTag[]
+  seoMetadata      SeoMetadata?
+  articleFaqs      ArticleFAQ[]
+  codeExamples     CodeExample[]
+  attachments      Attachment[]
+  sourceRelations  RelatedArticle[] @relation("SourceArticle")
+  targetRelations  RelatedArticle[] @relation("TargetArticle")
+  readingHistory   ReadingHistory[]
+  articleAnalytics ArticleAnalytics?
+
+  @@index([topicId])
+  @@index([subTopicId])
+  @@index([slug])
+  @@index([status, publishedAt])
+  @@index([tags])
+  @@map("articles")
+}
+
+model ArticleVersion {
+  id        String   @id @default(uuid())
+  articleId String
+  title     String
+  content   String   @db.Text
+  version   Int
+  authorId  String?
+  createdAt DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  author  User?   @relation(fields: [authorId], references: [id])
+
+  @@unique([articleId, version])
+  @@map("article_versions")
+}
+
+// ─── Article Metadata (Part 22.2A Chunk A2) ──
+
+model ArticleTag {
+  articleId String
+  tagId     String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tagId])
+  @@map("article_tags")
+}
+
+model SeoMetadata {
+  id              String  @id @default(uuid())
+  articleId       String  @unique
+  metaTitle       String
+  metaDescription String  @db.Text
+  canonicalUrl    String?
+  ogImage         String?
+  robots          String? @default("index,follow")
+  schemaMarkup    Json?
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@map("seo_metadata")
+}
+
+model ArticleFAQ {
+  id        String @id @default(uuid())
+  articleId String
+  question  String
+  answer    String @db.Text
+  order     Int    @default(0)
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@map("article_faqs")
+}
+
+model CodeExample {
+  id          String  @id @default(uuid())
+  articleId   String
+  title       String
+  language    String
+  code        String  @db.Text
+  explanation String? @db.Text
+  order       Int     @default(0)
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@map("code_examples")
+}
+
+model Attachment {
+  id        String @id @default(uuid())
+  articleId String
+  fileName  String
+  fileUrl   String
+  mimeType  String
+  size      Int
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+model RelatedArticle {
+  sourceArticleId String
+  targetArticleId String
+  score           Float?
+
+  source Article @relation("SourceArticle", fields: [sourceArticleId], references: [id], onDelete: Cascade)
+  target Article @relation("TargetArticle", fields: [targetArticleId], references: [id], onDelete: Cascade)
+
+  @@id([sourceArticleId, targetArticleId])
+  @@map("related_articles")
+}
+
+model ReadingHistory {
+  id         String   @id @default(uuid())
+  userId     String
+  articleId  String
+  progress   Float    @default(0)
+  lastReadAt DateTime @default(now())
+  completed  Boolean  @default(false)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@map("reading_history")
+}
+
+model ArticleAnalytics {
+  id              String @id @default(uuid())
+  articleId       String @unique
+  views           Int    @default(0)
+  likes           Int    @default(0)
+  bookmarks       Int    @default(0)
+  averageReadTime Int    @default(0)
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@map("article_analytics")
+}
+
+model Roadmap {
+  id             String        @id @default(uuid())
+  title          String
+  slug           String        @unique
+  description    String?       @db.Text
+  topicId        String
+  technologyId   String?
+  estimatedHours Int?
+  isPublished    Boolean       @default(false)
+  status         ContentStatus @default(PUBLISHED)
+  deletedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  topic      Topic       @relation(fields: [topicId], references: [id])
+  technology Technology? @relation(fields: [technologyId], references: [id], onDelete: Cascade)
+  steps      RoadmapStep[]
+  progress   RoadmapProgress[]
+
+  @@index([slug])
+  @@index([technologyId])
+  @@map("roadmaps")
+}
+
+model RoadmapStep {
+  id          String  @id @default(uuid())
+  roadmapId   String
+  topicId     String?
+  title       String
+  description String? @db.Text
+  order       Int
+  resources   Json?
+  createdAt   DateTime @default(now())
+
+  roadmap Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  topic   Topic?  @relation(fields: [topicId], references: [id])
+
+  @@index([roadmapId, order])
+  @@unique([roadmapId, order])
+  @@map("roadmap_steps")
+}
+
+model CheatSheet {
+  id        String        @id @default(uuid())
+  title     String
+  slug      String        @unique
+  content   String        @db.Text
+  topicId   String
+  status    ContentStatus @default(PUBLISHED)
+  deletedAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  topic Topic @relation(fields: [topicId], references: [id])
+
+  @@index([slug])
+  @@map("cheat_sheets")
+}
+
+model FlashcardDeck {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  description String?       @db.Text
+  topicId     String
+  status      ContentStatus @default(PUBLISHED)
+  cardCount   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  topic      Topic       @relation(fields: [topicId], references: [id])
+  flashcards Flashcard[]
+
+  @@index([topicId])
+  @@map("flashcard_decks")
+}
+
+model Flashcard {
+  id         String   @id @default(uuid())
+  deckId     String
+  front      String   @db.Text
+  back       String   @db.Text
+  difficulty Int      @default(1)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  deck     FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  progress FlashcardProgress[]
+
+  @@index([deckId])
+  @@map("flashcards")
+}
+
+model FlashcardProgress {
+  id             String    @id @default(uuid())
+  userId         String
+  flashcardId    String
+  reviewCount    Int       @default(0)
+  confidence     Int       @default(0)
+  nextReviewAt   DateTime?
+  lastReviewedAt DateTime?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, flashcardId])
+  @@map("flashcard_progress")
+}
+
+model LearningResource {
+  id           String @id @default(uuid())
+  topicId      String
+  title        String
+  resourceType String
+  url          String
+  provider     String?
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@index([topicId])
+  @@map("learning_resources")
+}
+
+model Quiz {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  description String?       @db.Text
+  topicId     String
+  difficulty  Difficulty    @default(MEDIUM)
+  timeLimit   Int?          // minutes
+  durationMin Int?
+  isPublished Boolean       @default(false)
+  status      ContentStatus @default(PUBLISHED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  topic     Topic          @relation(fields: [topicId], references: [id])
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  @@index([topicId])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id           String            @id @default(uuid())
+  quizId       String
+  question     String            @db.Text
+  explanation  String?           @db.Text
+  type         QuizQuestionType  @default(SINGLE_CHOICE)
+  order        Int               @default(0)
+  points       Int               @default(1)
+  createdAt    DateTime          @default(now())
+
+  quiz    Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options QuizOption[]
+  answers QuizAnswer[]
+
+  @@index([quizId])
+  @@unique([quizId, order])
+  @@map("quiz_questions")
+}
+
+model QuizOption {
+  id         String  @id @default(uuid())
+  questionId String
+  text       String
+  isCorrect  Boolean @default(false)
+  order      Int     @default(0)
+
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@map("quiz_options")
+}
+
+model QuizAttempt {
+  id          String    @id @default(uuid())
+  quizId      String
+  userId      String
+  score       Int
+  total       Int
+  totalMarks  Int       @default(0)
+  answers     Json      // { questionId: selectedOptionId }
+  timeTaken   Int?      // seconds
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  quiz        Quiz         @relation(fields: [quizId], references: [id])
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizAnswers QuizAnswer[]
+
+  @@index([userId, quizId])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id            String  @id @default(uuid())
+  attemptId     String
+  questionId    String
+  selectedValue String?
+  isCorrect     Boolean
+
+  attempt  QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_answers")
+}
+
+model RevisionSession {
+  id         String   @id @default(uuid())
+  userId     String
+  topicId    String?
+  topicIds   String[]
+  scheduledAt DateTime?
+  cardsReviewed Int   @default(0)
+  correctCount  Int   @default(0)
+  duration   Int?     // seconds
+  completedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic? @relation(fields: [topicId], references: [id])
+
+  @@index([userId])
+  @@map("revision_sessions")
+}
+
+model StudySession {
+  id        String    @id @default(uuid())
+  userId    String
+  topicId   String
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  duration  Int       @default(0)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic @relation(fields: [topicId], references: [id])
+
+  @@map("study_sessions")
+}
+
+model AchievementProgress {
+  id          String  @id @default(uuid())
+  userId      String
+  achievement String
+  progress    Float   @default(0)
+  completed   Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("achievement_progress")
+}
+
+// ═══════════════════════════════════════════════
+// 3. INTERVIEW / COMPANY DOMAIN
+// ═══════════════════════════════════════════════
+
+model Company {
+  id               String        @id @default(uuid())
+  name             String        @unique
+  slug             String        @unique
+  logo             String?
+  description      String?       @db.Text
+  industry         String?
+  website          String?
+  headquarters     String?
+  employeeCount    String?
+  size             CompanySize?
+  isHiring         Boolean       @default(true)
+  interviewProcess String?       @db.Text
+  avgSalary        Json?
+  techStack        String[]
+  status           ContentStatus @default(PUBLISHED)
+  deletedAt        DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  questions          Question[]
+  experiences        InterviewExperience[]
+  companyRoles       CompanyRole[]
+  interviewRounds    InterviewRound[]
+  interviewQuestions InterviewQuestionDB[]
+  interviewProcesses InterviewProcess[]
+  salaryInsights     SalaryInsight[]
+  preparationPlans   PreparationPlan[]
+  problemCompanies   ProblemCompany[]
+  companyTagMaps     CompanyTagMap[]
+  companyAnalytics   CompanyAnalytics?
+  hiringTrends       HiringTrend[]
+  mockInterviews     MockInterview[]
+  hrSessions         HRInterviewSession[]
+
+  @@index([slug])
+  @@index([industry])
+  @@map("companies")
+}
+
+model CompanyRole {
+  id            String   @id @default(uuid())
+  companyId     String
+  title         String
+  department    String?
+  level         String?
+  experienceMin Int?
+  experienceMax Int?
+  description   String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  company            Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  salaryInsights     SalaryInsight[]
+  experiences        InterviewExperience[]
+  interviewProcesses InterviewProcess[]
+  preparationPlans   PreparationPlan[]
+
+  @@index([companyId])
+  @@map("company_roles")
+}
+
+model InterviewRound {
+  id          String              @id @default(uuid())
+  companyId   String
+  name        String
+  type        InterviewRoundType?
+  order       Int
+  description String?             @db.Text
+  duration    Int?
+  tips        String?             @db.Text
+  createdAt   DateTime            @default(now())
+
+  company   Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  questions InterviewQuestionDB[]
+
+  @@index([companyId, order])
+  @@unique([companyId, order])
+  @@map("interview_rounds")
+}
+
+model InterviewQuestionDB {
+  id          String       @id @default(uuid())
+  companyId   String?
+  roundId     String
+  topicId     String?
+  question    String       @db.Text
+  answer      String?      @db.Text
+  type        QuestionType @default(THEORY)
+  difficulty  Difficulty   @default(MEDIUM)
+  frequency   Int          @default(1)
+  lastAskedAt DateTime?
+  isMostAsked Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  company Company?       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  round   InterviewRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  topic   Topic?         @relation(fields: [topicId], references: [id])
+
+  @@index([roundId])
+  @@index([companyId])
+  @@index([difficulty])
+  @@index([frequency])
+  @@map("interview_questions")
+}
+
+model Question {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  content     String        @db.Text
+  answer      String?       @db.Text
+  difficulty  Difficulty    @default(MEDIUM)
+  topicId     String
+  companyId   String?
+  type        QuestionType  @default(THEORY)
+  tags        String[]
+  views       Int           @default(0)
+  status      ContentStatus @default(PUBLISHED)
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  topic   Topic    @relation(fields: [topicId], references: [id])
+  company Company? @relation(fields: [companyId], references: [id])
+
+  @@index([topicId])
+  @@index([companyId])
+  @@index([difficulty])
+  @@index([companyId, difficulty])
+  @@index([topicId, status])
+  @@map("questions")
+}
+
+model InterviewExperience {
+  id              String          @id @default(uuid())
+  title           String
+  content         String          @db.Text
+  authorId        String?
+  companyId       String
+  roleId          String?
+  role            String
+  result          InterviewResult
+  rounds          Int
+  yoe             Int?
+  overallRating   Int?
+  difficulty      Difficulty?
+  anonymous       Boolean         @default(false)
+  selected        Boolean?
+  offerReceived   Boolean?
+  tags            String[]
+  views           Int             @default(0)
+  status          ContentStatus   @default(PUBLISHED)
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  author  User?       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  company Company     @relation(fields: [companyId], references: [id])
+  companyRole CompanyRole? @relation(fields: [roleId], references: [id])
+  votes   ExperienceVote[]
+
+  @@index([companyId])
+  @@index([authorId])
+  @@map("interview_experiences")
+}
+
+model ExperienceVote {
+  experienceId String
+  userId       String
+  helpful      Boolean
+
+  experience InterviewExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([experienceId, userId])
+  @@map("experience_votes")
+}
+
+model SalaryInsight {
+  id              String          @id @default(uuid())
+  companyId       String
+  roleId          String?
+  userId          String?
+  role            String
+  level           String?
+  employmentType  EmploymentType?
+  experienceYears Float?
+  baseSalary      Float?
+  totalComp       Float?
+  minSalary       Int?
+  maxSalary       Int?
+  currency        String          @default("INR")
+  location        String?
+  yoe             Int?
+  source          String?
+  anonymous       Boolean         @default(true)
+  verified        Boolean         @default(false)
+  reportedAt      DateTime        @default(now())
+  createdAt       DateTime        @default(now())
+
+  company     Company      @relation(fields: [companyId], references: [id])
+  companyRole CompanyRole? @relation(fields: [roleId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@map("salary_insights")
+}
+
+model PreparationPlan {
+  id            String   @id @default(uuid())
+  userId        String?
+  companyId     String?
+  roleId        String?
+  targetRole    String?
+  title         String?
+  description   String?
+  durationWeeks Int      @default(4)
+  durationDays  Int?
+  plan          Json
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user    User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role    CompanyRole? @relation(fields: [roleId], references: [id])
+  tasks   PreparationTask[]
+
+  @@index([userId])
+  @@map("preparation_plans")
+}
+
+model PreparationTask {
+  id        String  @id @default(uuid())
+  planId    String
+  title     String
+  dayNumber Int
+  completed Boolean @default(false)
+
+  plan PreparationPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, dayNumber])
+  @@map("preparation_tasks")
+}
+
+model InterviewProcess {
+  id            String   @id @default(uuid())
+  companyId     String
+  roleId        String?
+  totalRounds   Int
+  estimatedDays Int?
+  description   String?
+
+  company Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role    CompanyRole? @relation(fields: [roleId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("interview_processes")
+}
+
+model CompanyTag {
+  id   String @id @default(uuid())
+  name String @unique
+  slug String @unique
+
+  mappings CompanyTagMap[]
+
+  @@map("company_tags")
+}
+
+model CompanyTagMap {
+  companyId String
+  tagId     String
+
+  company Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tag     CompanyTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, tagId])
+  @@map("company_tag_maps")
+}
+
+model CompanyAnalytics {
+  companyId      String @id
+  pageViews      Int    @default(0)
+  followers      Int    @default(0)
+  interviewCount Int    @default(0)
+  avgDifficulty  Float  @default(0)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_analytics")
+}
+
+model HiringTrend {
+  id         String   @id @default(uuid())
+  companyId  String
+  month      DateTime
+  openings   Int
+  trendScore Float
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, month])
+  @@map("hiring_trends")
+}
+
+// ═══════════════════════════════════════════════
+// 4. CODING PLATFORM DOMAIN
+// ═══════════════════════════════════════════════
+
+model CodingProblem {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  description String        @db.Text
+  difficulty  Difficulty    @default(MEDIUM)
+  category    String
+  constraints String?       @db.Text
+  examples    Json
+  solution    String?       @db.Text
+  hints       String[]
+  tags        String[]
+  acceptance  Float         @default(0)
+  status      ContentStatus @default(PUBLISHED)
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  submissions    Submission[]
+  testCases      TestCase[]
+  hiddenTestCases HiddenTestCase[]
+  problemTags    ProblemTag[]
+  problemCompanies ProblemCompany[]
+  contestProblems  ContestProblem[]
+
+  @@index([difficulty])
+  @@index([category])
+  @@index([slug])
+  @@map("coding_problems")
+}
+
+model ProblemTag {
+  id        String @id @default(uuid())
+  problemId String
+  tag       String
+
+  problem CodingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, tag])
+  @@index([tag])
+  @@map("problem_tags")
+}
+
+model ProblemCompany {
+  id        String   @id @default(uuid())
+  problemId String
+  companyId String
+  frequency Int      @default(1)
+  lastAsked DateTime?
+
+  problem CodingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, companyId])
+  @@map("problem_companies")
+}
+
+model TestCase {
+  id        String  @id @default(uuid())
+  problemId String
+  input     String  @db.Text
+  expected  String  @db.Text
+  order     Int     @default(0)
+  isHidden  Boolean @default(false)
+
+  problem CodingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId])
+  @@map("test_cases")
+}
+
+model HiddenTestCase {
+  id        String @id @default(uuid())
+  problemId String
+  input     String @db.Text
+  expected  String @db.Text
+  order     Int    @default(0)
+
+  problem CodingProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId])
+  @@map("hidden_test_cases")
+}
+
+model Language {
+  id        String @id @default(uuid())
+  name      String @unique
+  slug      String @unique
+  version   String?
+  compileCmd String?
+  runCmd    String?
+  template  String? @db.Text
+  active    Boolean @default(true)
+
+  @@map("languages")
+}
+
+model Submission {
+  id        String           @id @default(uuid())
+  userId    String
+  problemId String
+  code      String           @db.Text
+  language  String
+  status    SubmissionStatus
+  runtime   Int?             // ms
+  memory    Int?             // KB
+  testsPassed Int?
+  testsTotal  Int?
+  createdAt DateTime         @default(now())
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem CodingProblem @relation(fields: [problemId], references: [id])
+
+  @@index([userId, problemId])
+  @@index([userId, createdAt])
+  @@map("submissions")
+}
+
+model Contest {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  description String?       @db.Text
+  startTime   DateTime
+  endTime     DateTime
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  problems     ContestProblem[]
+  submissions  ContestSubmission[]
+  leaderboard  Leaderboard[]
+  participants ContestParticipant[]
+
+  @@index([startTime])
+  @@map("contests")
+}
+
+model ContestProblem {
+  id        String @id @default(uuid())
+  contestId String
+  problemId String
+  order     Int    @default(0)
+  points    Int    @default(100)
+
+  contest Contest       @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem CodingProblem @relation(fields: [problemId], references: [id])
+
+  @@unique([contestId, problemId])
+  @@map("contest_problems")
+}
+
+model ContestSubmission {
+  id        String           @id @default(uuid())
+  contestId String
+  userId    String
+  problemId String
+  code      String           @db.Text
+  language  String
+  status    SubmissionStatus
+  runtime   Int?
+  points    Int              @default(0)
+  createdAt DateTime         @default(now())
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([contestId, userId])
+  @@map("contest_submissions")
+}
+
+model Leaderboard {
+  id        String @id @default(uuid())
+  contestId String
+  userId    String
+  rank      Int
+  score     Int
+  solvedCount Int  @default(0)
+  penalty   Int    @default(0)
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, userId])
+  @@index([contestId, rank])
+  @@map("leaderboards")
+}
+
+model ContestParticipant {
+  contestId String
+  userId    String
+  score     Int    @default(0)
+  rank      Int?
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, userId])
+  @@map("contest_participants")
+}
+
+// ═══════════════════════════════════════════════
+// 5. AI DOMAIN
+// ═══════════════════════════════════════════════
+
+model AITutorConversation {
+  id        String                @id @default(uuid())
+  userId    String
+  title     String?
+  topicId   String?
+  type      AIConversationType    @default(DOUBT_SOLVER)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AIMessage[]
+
+  @@index([userId])
+  @@map("ai_tutor_conversations")
+}
+
+model AIMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           String
+  content        String   @db.Text
+  metadata       Json?
+  tokenCount     Int?
+  model          String?
+  createdAt      DateTime @default(now())
+
+  conversation AITutorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+model MockInterview {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // technical, behavioral, system_design
+  companyId   String?
+  role        String?
+  duration    Int?     // minutes
+  score       Int?
+  feedback    Json?
+  transcript  Json?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company?            @relation(fields: [companyId], references: [id])
+  questions InterviewQuestionAI[]
+  feedbacks InterviewFeedback[]
+
+  @@index([userId])
+  @@map("mock_interviews")
+}
+
+model InterviewQuestionAI {
+  id           String   @id @default(uuid())
+  interviewId  String
+  question     String   @db.Text
+  userAnswer   String?  @db.Text
+  idealAnswer  String?  @db.Text
+  score        Int?
+  feedback     String?  @db.Text
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  interview MockInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@index([interviewId])
+  @@map("interview_questions_ai")
+}
+
+model InterviewFeedback {
+  id          String   @id @default(uuid())
+  interviewId String
+  category    String   // communication, technical, problem_solving
+  score       Int
+  feedback    String   @db.Text
+  createdAt   DateTime @default(now())
+
+  interview MockInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@index([interviewId])
+  @@map("interview_feedbacks")
+}
+
+model ResumeReview {
+  id          String   @id @default(uuid())
+  userId      String
+  fileName    String
+  fileUrl     String
+  atsScore    Int?
+  feedback    Json?
+  suggestions Json?
+  parsedData  Json?
+  createdAt   DateTime @default(now())
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  atsScores ATSScore[]
+
+  @@index([userId])
+  @@map("resume_reviews")
+}
+
+model ATSScore {
+  id          String   @id @default(uuid())
+  reviewId    String
+  category    String   // format, keywords, experience, skills
+  score       Int
+  maxScore    Int      @default(100)
+  suggestions String[] 
+  createdAt   DateTime @default(now())
+
+  review ResumeReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@map("ats_scores")
+}
+
+model LearningRecommendation {
+  id        String   @id @default(uuid())
+  userId    String
+  topicId   String?
+  type      String   // topic, article, problem, quiz
+  entityId  String
+  reason    String?  @db.Text
+  score     Float    @default(0)
+  priority  Int      @default(1)
+  seen      Boolean  @default(false)
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic? @relation(fields: [topicId], references: [id])
+
+  @@index([userId, seen])
+  @@map("learning_recommendations")
+}
+
+model StudyPlan {
+  id            String   @id @default(uuid())
+  userId        String
+  title         String
+  targetRole    String?
+  targetCompany String?
+  timeline      Int?     // days
+  plan          Json
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("study_plans")
+}
+
+model Portfolio {
+  id       String  @id @default(uuid())
+  userId   String
+  slug     String  @unique
+  theme    String?
+  isPublic Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("portfolios")
+}
+
+model HRInterviewSession {
+  id         String  @id @default(uuid())
+  userId     String
+  companyId  String?
+  score      Float?
+  transcript String? @db.Text
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company? @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("hr_interview_sessions")
+}
+
+model InterviewAnalytics {
+  id              String  @id @default(uuid())
+  userId          String  @unique
+  interviewsTaken Int     @default(0)
+  avgScore        Float   @default(0)
+  strongestTopic  String?
+  weakestTopic    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("interview_analytics")
+}
+
+model AIUsageHistory {
+  id         String  @id @default(uuid())
+  userId     String
+  feature    String
+  tokensUsed Int
+  model      String
+  cost       Float?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("ai_usage_history")
+}
+
+model AIRecommendationHistory {
+  id       String  @id @default(uuid())
+  userId   String
+  title    String
+  payload  Json
+  accepted Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("ai_recommendation_history")
+}
+
+model StudyGroup {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+
+  owner   User               @relation(fields: [ownerId], references: [id])
+  members StudyGroupMember[]
+
+  createdAt DateTime @default(now())
+
+  @@map("study_groups")
+}
+
+model StudyGroupMember {
+  groupId String
+  userId  String
+  role    String @default("MEMBER")
+
+  group StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@map("study_group_members")
+}
+
+// ═══════════════════════════════════════════════
+// 6. RESUME DOMAIN
+// ═══════════════════════════════════════════════
+
+model Resume {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  template  String   @default("modern")
+  summary   String?  @db.Text
+  atsScore  Float?
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions      ResumeVersion[]
+  skills        Skill[]
+  projects      Project[]
+  workExperiences WorkExperience[]
+  educations    Education[]
+  certifications Certification[]
+  resumeAchievements ResumeAchievement[]
+  atsReports    ATSReport[]
+
+  @@index([userId])
+  @@map("resumes")
+}
+
+model ResumeVersion {
+  id        String   @id @default(uuid())
+  resumeId  String
+  version   Int
+  snapshot  Json
+  createdAt DateTime @default(now())
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, version])
+  @@map("resume_versions")
+}
+
+model ATSReport {
+  id              String @id @default(uuid())
+  resumeId        String
+  overallScore    Float
+  keywordScore    Float
+  formattingScore Float
+  suggestions     Json
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([resumeId])
+  @@map("ats_reports")
+}
+
+model Skill {
+  id       String @id @default(uuid())
+  resumeId String
+  name     String
+  level    String? // beginner, intermediate, advanced, expert
+  category String? // language, framework, tool, soft_skill
+  order    Int    @default(0)
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("skills")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  resumeId    String
+  name        String
+  description String?  @db.Text
+  techStack   String[]
+  url         String?
+  startDate   DateTime?
+  endDate     DateTime?
+  order       Int      @default(0)
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("projects")
+}
+
+model WorkExperience {
+  id          String    @id @default(uuid())
+  resumeId    String
+  company     String
+  role        String
+  location    String?
+  description String?   @db.Text
+  highlights  String[]
+  startDate   DateTime
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  order       Int       @default(0)
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("work_experiences")
+}
+
+model Education {
+  id          String    @id @default(uuid())
+  resumeId    String
+  institution String
+  degree      String
+  field       String?
+  grade       String?
+  startDate   DateTime
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  order       Int       @default(0)
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("educations")
+}
+
+model Certification {
+  id         String    @id @default(uuid())
+  resumeId   String
+  name       String
+  issuer     String
+  issueDate  DateTime?
+  expiryDate DateTime?
+  url        String?
+  order      Int       @default(0)
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("certifications")
+}
+
+model ResumeAchievement {
+  id          String @id @default(uuid())
+  resumeId    String
+  title       String
+  description String? @db.Text
+  date        DateTime?
+  order       Int     @default(0)
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@map("resume_achievements")
+}
+
+// ═══════════════════════════════════════════════
+// 7. COMMUNITY DOMAIN
+// ═══════════════════════════════════════════════
+
+model Post {
+  id        String        @id @default(uuid())
+  title     String
+  slug      String        @unique
+  content   String        @db.Text
+  authorId  String
+  tags      String[]
+  views     Int           @default(0)
+  pinned    Boolean       @default(false)
+  status    ContentStatus @default(PUBLISHED)
+  deletedAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  votes    Vote[]
+
+  @@index([authorId])
+  @@index([slug])
+  @@index([createdAt])
+  @@index([tags])
+  @@map("posts")
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  content   String    @db.Text
+  authorId  String
+  postId    String?
+  articleId String?
+  parentId  String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post    Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  article Article?  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
+  votes   Vote[]
+
+  @@index([postId])
+  @@index([articleId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  userId    String
+  value     Int      // +1 or -1
+  postId    String?
+  commentId String?
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@map("votes")
+}
+
+model Tag {
+  id          String @id @default(uuid())
+  name        String @unique
+  slug        String @unique
+  description String?
+  usageCount  Int    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  articles ArticleTag[]
+
+  @@index([slug])
+  @@map("tags")
+}
+
+model Bookmark {
+  id         String   @id @default(uuid())
+  userId     String
+  entityType String
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@map("bookmarks")
+}
+
+model Collection {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  description String?  @db.Text
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CollectionItem[]
+
+  @@index([userId])
+  @@map("collections")
+}
+
+model CollectionItem {
+  id           String   @id @default(uuid())
+  collectionId String
+  entityType   String
+  entityId     String
+  order        Int      @default(0)
+  addedAt      DateTime @default(now())
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, entityType, entityId])
+  @@map("collection_items")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("FollowingUser", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("FollowedUser", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  actorId   String?
+  type      NotificationType
+  title     String
+  message   String?          @db.Text
+  entityType String?
+  entityId  String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user  User  @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id])
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ═══════════════════════════════════════════════
+// 8. PROGRESS & GAMIFICATION DOMAIN
+// ═══════════════════════════════════════════════
+
+model UserProgress {
+  id         String   @id @default(uuid())
+  userId     String
+  entityType String
+  entityId   String
+  status     String   // not_started, in_progress, completed
+  percentage Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@map("user_progress")
+}
+
+model LearningProgress {
+  id             String  @id @default(uuid())
+  userId         String
+  topicId        String
+  completion     Float   @default(0)
+  totalStudyMins Int     @default(0)
+  articlesRead   Int     @default(0)
+  quizzesTaken   Int     @default(0)
+  problemsSolved Int     @default(0)
+  totalXP        Int     @default(0)
+  completed      Boolean @default(false)
+  updatedAt      DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
+  @@map("learning_progress")
+}
+
+model RoadmapProgress {
+  id         String   @id @default(uuid())
+  userId     String
+  roadmapId  String
+  currentStep Int     @default(0)
+  completed  Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmap Roadmap @relation(fields: [roadmapId], references: [id])
+
+  @@unique([userId, roadmapId])
+  @@map("roadmap_progress")
+}
+
+model ArticleProgress {
+  id        String   @id @default(uuid())
+  userId    String
+  articleId String
+  completed Boolean  @default(false)
+  readAt    DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id])
+
+  @@unique([userId, articleId])
+  @@map("article_progress")
+}
+
+model QuizProgress {
+  id         String @id @default(uuid())
+  userId     String
+  quizId     String
+  bestScore  Int    @default(0)
+  attempts   Int    @default(0)
+  lastAttempt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, quizId])
+  @@map("quiz_progress")
+}
+
+model CodingProgress {
+  id         String @id @default(uuid())
+  userId     String
+  problemId  String
+  solved     Boolean @default(false)
+  attempts   Int     @default(0)
+  bestRuntime Int?
+  bestMemory  Int?
+  firstSolvedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@map("coding_progress")
+}
+
+model DailyGoal {
+  id            String   @id @default(uuid())
+  userId        String
+  date          DateTime @db.Date
+  targetXP      Int      @default(50)
+  earnedXP      Int      @default(0)
+  articlesGoal  Int      @default(2)
+  articlesRead  Int      @default(0)
+  problemsGoal  Int      @default(1)
+  problemsSolved Int     @default(0)
+  completed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("daily_goals")
+}
+
+model WeeklyGoal {
+  id             String   @id @default(uuid())
+  userId         String
+  weekStart      DateTime @db.Date
+  targetXP       Int      @default(350)
+  earnedXP       Int      @default(0)
+  topicsGoal     Int      @default(3)
+  topicsStudied  Int      @default(0)
+  completed      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@map("weekly_goals")
+}
+
+model Badge {
+  id          String @id @default(uuid())
+  name        String @unique
+  slug        String @unique
+  description String
+  icon        String
+  category    String // learning, coding, community, streak
+  criteria    Json   // { type: "problems_solved", threshold: 50 }
+  xpReward    Int    @default(0)
+  createdAt   DateTime @default(now())
+
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(uuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id])
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model Achievement {
+  id          String @id @default(uuid())
+  name        String @unique
+  slug        String @unique
+  description String
+  icon        String
+  tier        String // bronze, silver, gold, platinum
+  criteria    Json
+  xpReward    Int    @default(0)
+  createdAt   DateTime @default(now())
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(uuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+model XPHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int
+  source    String   // quiz, article, problem, streak, badge
+  sourceId  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("xp_history")
+}
+
+model LearningStreak {
+  id            String   @id @default(uuid())
+  userId        String
+  startDate     DateTime @db.Date
+  endDate       DateTime @db.Date
+  length        Int      @default(1)
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  lastActiveOn  DateTime?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, active])
+  @@map("learning_streaks")
+}
+
+// ═══════════════════════════════════════════════
+// 9. SEARCH DOMAIN
+// ═══════════════════════════════════════════════
+
+model SearchKeyword {
+  id        String   @id @default(uuid())
+  keyword   String   @unique
+  count     Int      @default(1)
+  lastSearched DateTime @default(now())
+
+  @@index([count])
+  @@map("search_keywords")
+}
+
+model TrendingSearch {
+  id        String   @id @default(uuid())
+  keyword   String
+  count     Int      @default(1)
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  @@unique([keyword, date])
+  @@index([date, count])
+  @@map("trending_searches")
+}
+
+model SearchAnalytics {
+  id          String   @id @default(uuid())
+  query       String
+  resultsCount Int     @default(0)
+  clickedId   String?
+  clickedType String?
+  userId      String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("search_analytics")
+}
+
+// ═══════════════════════════════════════════════
+// 10. SEO DOMAIN
+// ═══════════════════════════════════════════════
+
+model SlugHistory {
+  id         String   @id @default(uuid())
+  oldSlug    String
+  newSlug    String
+  entityType String
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  @@index([oldSlug])
+  @@map("slug_history")
+}
+
+model MetaData {
+  id          String  @id @default(uuid())
+  entityType  String
+  entityId    String
+  title       String?
+  description String? @db.Text
+  keywords    String[]
+  ogImage     String?
+  canonical   String?
+  noIndex     Boolean @default(false)
+
+  @@unique([entityType, entityId])
+  @@map("meta_data")
+}
+
+model Redirect {
+  id        String   @id @default(uuid())
+  fromPath  String   @unique
+  toPath    String
+  statusCode Int     @default(301)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("redirects")
+}
+
+model FAQ {
+  id         String   @id @default(uuid())
+  question   String
+  answer     String   @db.Text
+  entityType String?
+  entityId   String?
+  order      Int      @default(0)
+  published  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+model SchemaMarkup {
+  id         String @id @default(uuid())
+  entityType String
+  entityId   String
+  type       String // Article, FAQPage, Course, Organization
+  data       Json
+
+  @@unique([entityType, entityId])
+  @@map("schema_markups")
+}
+
+// ═══════════════════════════════════════════════
+// 11. ADMIN DOMAIN
+// ═══════════════════════════════════════════════
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String?
+  action     AuditAction
+  entityType String
+  entityId   String
+  oldData    Json?
+  newData    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  category  String?
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model FeatureFlag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  enabled     Boolean  @default(false)
+  rules       Json?    // { roles: ["ADMIN"], plans: ["PRO"] }
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("feature_flags")
+}
+
+model Announcement {
+  id        String        @id @default(uuid())
+  title     String
+  content   String        @db.Text
+  type      String        @default("info") // info, warning, success, error
+  status    ContentStatus @default(DRAFT)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("announcements")
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  reporterId  String
+  targetId    String?
+  entityType  String
+  entityId    String
+  reason      ReportReason
+  description String?      @db.Text
+  status      ReportStatus @default(PENDING)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  reporter User  @relation("ReportAuthor", fields: [reporterId], references: [id], onDelete: Cascade)
+  target   User? @relation("ReportTarget", fields: [targetId], references: [id])
+
+  @@index([status])
+  @@index([entityType, entityId])
+  @@map("reports")
+}
+
+model ModerationQueue {
+  id         String   @id @default(uuid())
+  entityType String
+  entityId   String
+  reason     String
+  priority   Int      @default(0) // higher = more urgent
+  assignedTo String?
+  resolvedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([resolvedAt])
+  @@index([priority])
+  @@map("moderation_queue")
+}
+
+// ═══════════════════════════════════════════════
+// 12. ANALYTICS DOMAIN
+// ═══════════════════════════════════════════════
+
+model PageView {
+  id         String   @id @default(uuid())
+  path       String
+  userId     String?
+  sessionId  String?
+  referrer   String?
+  userAgent  String?
+  country    String?
+  device     String?
+  duration   Int?     // seconds
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([path])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("page_views")
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String?
+  sessionId String?
+  properties Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([name])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+model SessionAnalytics {
+  id         String   @id @default(uuid())
+  sessionId  String   @unique
+  userId     String?
+  startedAt  DateTime
+  endedAt    DateTime?
+  pageCount  Int      @default(0)
+  duration   Int?     // seconds
+  device     String?
+  browser    String?
+  os         String?
+  country    String?
+
+  @@index([userId])
+  @@index([startedAt])
+  @@map("session_analytics")
+}
+
+model ContentAnalytics {
+  id         String   @id @default(uuid())
+  entityType String
+  entityId   String
+  date       DateTime @db.Date
+  views      Int      @default(0)
+  uniqueViews Int     @default(0)
+  avgDuration Int?    // seconds
+  bounceRate Float?
+  shares     Int      @default(0)
+
+  @@unique([entityType, entityId, date])
+  @@index([date])
+  @@map("content_analytics")
+}
+
+// ═══════════════════════════════════════════════
+// 13. SUBSCRIPTION & PAYMENT DOMAIN
+// ═══════════════════════════════════════════════
+
+model Subscription {
+  id       String           @id @default(uuid())
+  userId   String
+  plan     SubscriptionPlan
+  startsAt DateTime
+  expiresAt DateTime
+  active   Boolean          @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  userId        String
+  amount        Float
+  currency      String        @default("INR")
+  status        PaymentStatus
+  provider      String
+  transactionId String        @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("payments")
+}
+
+model Coupon {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  description String?
+  discountPct Float
+  expiresAt   DateTime?
+  active      Boolean   @default(true)
+
+  @@map("coupons")
+}
+
+model NotificationTemplate {
+  id      String @id @default(uuid())
+  name    String @unique
+  subject String
+  body    String @db.Text
+  channel String
+
+  createdAt DateTime @default(now())
+
+  @@map("notification_templates")
+}
+
+model AdminSetting {
+  id       String @id @default(uuid())
+  category String
+  key      String
+  value    Json
+
+  @@unique([category, key])
+  @@map("admin_settings")
+}
+
+model PlatformAnalytics {
+  id          String   @id @default(uuid())
+  metric      String
+  metricValue Float
+  recordedAt  DateTime @default(now())
+
+  @@index([metric])
+  @@map("platform_analytics")
+}
+
+model AuditEvent {
+  id       String  @id @default(uuid())
+  actorId  String?
+  action   String
+  entity   String
+  entityId String?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("audit_events")
+}
