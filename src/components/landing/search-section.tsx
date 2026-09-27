@@ -7,23 +7,12 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
-const trendingSearches = [
-  "Java Interview Questions",
-  "React Hooks",
-  "System Design",
-  "Spring Boot",
-  "AWS Lambda",
-  "SQL Joins",
-  "SAP FICO",
-  "Docker vs Kubernetes",
-  "JavaScript Closures",
-  "REST API",
-];
+type TrendingTopic = { name: string; slug: string };
 
-export function SearchSection() {
+export function SearchSection({ trendingTopics }: { trendingTopics: TrendingTopic[] }) {
   const [query, setQuery] = useState("");
-  const filtered = trendingSearches.filter((s) =>
-    s.toLowerCase().includes(query.toLowerCase())
+  const filtered = trendingTopics.filter((topic) =>
+    topic.name.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
@@ -43,7 +32,7 @@ export function SearchSection() {
             <Input
               type="search"
               placeholder="Search topics, questions, roadmaps..."
-              className="h-12 rounded-2xl pl-12 pr-4 text-sm shadow-lg border-border/50 focus:border-primary sm:h-14 sm:text-base"
+              className="h-12 rounded-2xl border-border/50 pl-12 pr-4 text-sm shadow-lg focus:border-emerald-500 sm:h-14 sm:text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -52,16 +41,16 @@ export function SearchSection() {
             <span className="text-xs text-muted-foreground mr-1 self-center">
               Trending:
             </span>
-            {(query ? filtered : trendingSearches).slice(0, 6).map((term) => (
+            {(query ? filtered : trendingTopics).slice(0, 6).map((topic) => (
               <Link
-                key={term}
-                href={`/topics/${term.toLowerCase().replace(/[\s]+/g, "-")}`}
+                key={topic.slug}
+                href={`/topics/${topic.slug}`}
               >
                 <Badge
                   variant="secondary"
-                  className="cursor-pointer text-xs transition-colors hover:bg-primary/10 hover:text-primary"
+                  className="cursor-pointer text-xs transition-colors hover:bg-emerald-50 hover:text-emerald-800"
                 >
-                  {term}
+                  {topic.name}
                 </Badge>
               </Link>
             ))}

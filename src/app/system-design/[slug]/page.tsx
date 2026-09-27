@@ -1,38 +1,59 @@
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { generateSEO } from "@/lib/seo";
-import { breadcrumbJsonLd } from "@/lib/json-ld";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { articleRepository } from "@/repositories/article.repository";
+import { compileMdxContent, extractTableOfContents } from "@/lib/mdx";
+import { generateArticleSEO } from "@/lib/seo";
+import { articleJsonLd, breadcrumbJsonLd } from "@/lib/json-ld";
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const dynamic = "force-dynamic";
+
+async function getArticle(slug: string) {
+  const article = await articleRepository.findPublishedBySlug(slug);
+  if (article) await articleRepository.incrementViews(article.id);
+  return article;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const title = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  return generateSEO({
-    title: `${title} — System Design Deep Dive`,
-    description: `Learn how to design ${title}. Complete HLD/LLD breakdown with architecture diagrams, design decisions, trade-offs, and interview tips.`,
+  const article = await articleRepository.findPublishedBySlug(slug);
+
+  if (!article || article.topic.category !== "System Design") {
+    return { title: "System Design Article Not Found" };
+  }
+
+  return generateArticleSEO({
+    title: article.title,
+    description: article.excerpt ?? article.shortDescription ?? `Published system-design article: ${article.title}`,
     path: `/system-design/${slug}`,
-    keywords: [slug, "system design", "HLD", "LLD", "architecture"],
+    publishedTime: article.publishedAt?.toISOString(),
+    modifiedTime: article.updatedAt.toISOString(),
+    authorName: article.author?.displayName ?? "InterviewHub AI",
+    tags: article.tags,
   });
 }
 
-const sections = [
-  "Requirements",
-  "High-Level Design",
-  "API Design",
-  "Data Model",
-  "Detailed Design",
-  "Scalability",
-  "Trade-offs",
-];
-
 export default async function SystemDesignDetailPage({ params }: Props) {
   const { slug } = await params;
-  const title = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const article = await getArticle(slug);
+
+  if (!article || article.topic.category !== "System Design") notFound();
+
+  const relatedArticles = (await articleRepository.findPublishedByTopicCategory("System Design", 12))
+    .filter((related) => related.id !== article.id)
+    .slice(0, 4);
+  const toc = extractTableOfContents(article.content);
+
+  let content: React.ReactNode;
+  try {
+    content = (await compileMdxContent(article.content)).content;
+  } catch {
+    content = <div className="whitespace-pre-wrap">{article.content}</div>;
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -43,147 +64,77 @@ export default async function SystemDesignDetailPage({ params }: Props) {
             breadcrumbJsonLd([
               { name: "Home", href: "/" },
               { name: "System Design", href: "/system-design" },
-              { name: title, href: `/system-design/${slug}` },
+              { name: article.title, href: `/system-design/${slug}` },
             ])
           ),
         }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            articleJsonLd({
+              title: article.title,
+              description: article.excerpt ?? article.title,
+              slug: article.slug,
+              publishedAt: article.publishedAt?.toISOString() ?? article.createdAt.toISOString(),
+              updatedAt: article.updatedAt.toISOString(),
+              authorName: article.author?.displayName ?? "InterviewHub AI",
+            })
+          ),
+        }}
+      />
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight">Design: {title}</h1>
-            <Badge>HLD + LLD</Badge>
+      <Link href="/system-design" className="mb-6 inline-flex text-sm text-muted-foreground hover:text-foreground">
+        Back to System Design
+      </Link>
+
+      <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
+        <article>
+          <div className="mb-8">
+            <Link href={`/topics/${article.topic.slug}`}>
+              <Badge variant="secondary">{article.topic.name}</Badge>
+            </Link>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{article.title}</h1>
+            {article.excerpt && <p className="mt-3 text-lg text-muted-foreground">{article.excerpt}</p>}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {article.tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
+            </div>
           </div>
-          <p className="mt-2 text-muted-foreground">
-            Complete system design breakdown with architecture, data model, and scalability analysis.
-          </p>
 
-          <Separator className="my-6" />
-
-          <div className="prose prose-neutral dark:prose-invert max-w-none">
-            <h2>1. Requirements</h2>
-            <h3>Functional Requirements</h3>
-            <ul>
-              <li>Users should be able to create, read, update, and delete resources</li>
-              <li>System should support real-time updates</li>
-              <li>Support search and filtering</li>
-              <li>Authentication and authorization</li>
-            </ul>
-            <h3>Non-Functional Requirements</h3>
-            <ul>
-              <li>High availability (99.99% uptime)</li>
-              <li>Low latency (&lt; 200ms p99)</li>
-              <li>Horizontal scalability</li>
-              <li>Data consistency (eventual for reads, strong for writes)</li>
-            </ul>
-
-            <h2>2. Capacity Estimation</h2>
-            <ul>
-              <li>DAU: 100M users</li>
-              <li>Read/Write ratio: 100:1</li>
-              <li>Storage: ~500TB over 5 years</li>
-              <li>Bandwidth: ~1Gbps</li>
-            </ul>
-
-            <h2>3. High-Level Design</h2>
-            <div className="flex items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 p-8">
-              <p className="text-muted-foreground">Architecture diagram (Mermaid/UML) will render here</p>
-            </div>
-
-            <h2>4. API Design</h2>
-            <pre className="rounded-lg bg-muted p-4 text-sm">
-              <code>{`POST   /api/v1/resource      — Create
-GET    /api/v1/resource/:id  — Read
-PUT    /api/v1/resource/:id  — Update
-DELETE /api/v1/resource/:id  — Delete
-GET    /api/v1/resource      — List (paginated)`}</code>
-            </pre>
-
-            <h2>5. Data Model</h2>
-            <pre className="rounded-lg bg-muted p-4 text-sm">
-              <code>{`Table: resource
-  id          UUID PRIMARY KEY
-  created_by  UUID REFERENCES users(id)
-  content     TEXT
-  metadata    JSONB
-  created_at  TIMESTAMP
-  updated_at  TIMESTAMP
-
-Indexes:
-  - (created_by, created_at DESC)
-  - GIN index on metadata`}</code>
-            </pre>
-
-            <h2>6. Detailed Component Design</h2>
-            <p>Key components include load balancer, API gateway, application servers,
-            cache layer (Redis), primary database (PostgreSQL), message queue,
-            and CDN for static assets.</p>
-
-            <h2>7. Scalability & Trade-offs</h2>
-            <ul>
-              <li><strong>Caching:</strong> Redis for hot data, CDN for static content</li>
-              <li><strong>Database:</strong> Read replicas + sharding for horizontal scale</li>
-              <li><strong>Message Queue:</strong> Kafka for async processing</li>
-              <li><strong>Trade-off:</strong> Eventual consistency for higher availability</li>
-            </ul>
+          <Separator className="mb-8" />
+          <div className="prose prose-neutral dark:prose-invert max-w-none prose-headings:scroll-mt-20 prose-pre:bg-muted prose-pre:text-foreground">
+            {content}
           </div>
-        </div>
+        </article>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Table of Contents</CardTitle>
-            </CardHeader>
-            <div className="space-y-1 px-6 pb-6">
-              {sections.map((s, i) => (
-                <div key={s} className="rounded-lg p-2 text-sm transition-colors hover:bg-muted/50 cursor-pointer">
-                  {i + 1}. {s}
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Difficulty</CardTitle>
-              <Badge className="mt-2 bg-yellow-50 text-yellow-600">Medium</Badge>
-            </CardHeader>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Asked At</CardTitle>
-            </CardHeader>
-            <div className="flex flex-wrap gap-2 px-6 pb-6">
-              {["Google", "Amazon", "Meta", "Microsoft"].map((c) => (
-                <Badge key={c} variant="outline">{c}</Badge>
-              ))}
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Related Designs</CardTitle>
-            </CardHeader>
-            <div className="space-y-2 px-6 pb-6">
-              {[
-                { name: "URL Shortener", slug: "url-shortener" },
-                { name: "Chat System", slug: "chat-system" },
-                { name: "News Feed", slug: "news-feed" },
-              ].map((d) => (
-                <Link
-                  key={d.slug}
-                  href={`/system-design/${d.slug}`}
-                  className="block rounded-lg p-2 text-sm transition-colors hover:bg-muted/50"
-                >
-                  {d.name}
-                </Link>
-              ))}
-            </div>
-          </Card>
-        </div>
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <h2 className="mb-4 text-sm font-semibold">On this page</h2>
+            {toc.length ? (
+              <nav className="space-y-1">
+                {toc.map((item) => (
+                  <a key={item.id} href={`#${item.id}`} className="block text-sm text-muted-foreground hover:text-foreground" style={{ paddingLeft: `${(item.level - 1) * 12}px` }}>
+                    {item.text}
+                  </a>
+                ))}
+              </nav>
+            ) : <p className="text-sm text-muted-foreground">No headings found.</p>}
+            {relatedArticles.length > 0 && (
+              <>
+                <Separator className="my-6" />
+                <h2 className="mb-3 text-sm font-semibold">Related Articles</h2>
+                <nav className="space-y-1">
+                  {relatedArticles.map((related) => (
+                    <Link key={related.id} href={`/system-design/${related.slug}`} className="block rounded-lg p-2 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground">
+                      {related.title}
+                    </Link>
+                  ))}
+                </nav>
+              </>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );

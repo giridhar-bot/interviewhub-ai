@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { generateSEO } from "@/lib/seo";
+import { adminRepository } from "@/repositories/admin.repository";
 
 export const metadata = generateSEO({
   title: "User Management — Admin",
@@ -13,27 +14,28 @@ export const metadata = generateSEO({
 
 export const dynamic = "force-dynamic";
 
-const sampleUsers = [
-  { id: "1", name: "Rahul Sharma", email: "rahul@example.com", role: "USER", status: "Active", joinDate: "2024-12-01", xp: 2450 },
-  { id: "2", name: "Priya Patel", email: "priya@example.com", role: "PREMIUM", status: "Active", joinDate: "2024-11-15", xp: 5200 },
-  { id: "3", name: "Amit Kumar", email: "amit@example.com", role: "MODERATOR", status: "Active", joinDate: "2024-10-20", xp: 8900 },
-  { id: "4", name: "Sara Johnson", email: "sara@example.com", role: "USER", status: "Suspended", joinDate: "2024-09-05", xp: 120 },
-  { id: "5", name: "Vikram Singh", email: "vikram@example.com", role: "ADMIN", status: "Active", joinDate: "2024-08-01", xp: 15000 },
-];
-
 const roleColors: Record<string, string> = {
   USER: "bg-gray-100 text-gray-600",
   PREMIUM: "bg-violet-50 text-violet-600",
   MODERATOR: "bg-blue-50 text-blue-600",
+  AUTHOR: "bg-cyan-50 text-cyan-600",
   ADMIN: "bg-red-50 text-red-600",
+  SUPER_ADMIN: "bg-red-100 text-red-700",
 };
 
 const statusColors: Record<string, string> = {
-  Active: "bg-green-50 text-green-600",
-  Suspended: "bg-red-50 text-red-600",
+  ACTIVE: "bg-green-50 text-green-600",
+  PENDING: "bg-yellow-50 text-yellow-600",
+  SUSPENDED: "bg-red-50 text-red-600",
+  DELETED: "bg-muted text-muted-foreground",
 };
 
-export default function AdminUsersPage() {
+export default async function AdminUsersPage() {
+  const [users, stats] = await Promise.all([
+    adminRepository.getUserAdminList(),
+    adminRepository.getUserAdminStats(),
+  ]);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
@@ -50,18 +52,15 @@ export default function AdminUsersPage() {
       {/* Stats */}
       <div className="mt-6 grid grid-cols-4 gap-4">
         {[
-          { label: "Total Users", value: "12,450", change: "+8.2%" },
-          { label: "Active Today", value: "1,240", change: "+12%" },
-          { label: "Premium", value: "890", change: "+5.3%" },
-          { label: "New This Week", value: "156", change: "+22%" },
+          { label: "Total Users", value: stats.total },
+          { label: "Active Today", value: stats.activeToday },
+          { label: "Premium", value: stats.premium },
+          { label: "New This Week", value: stats.newThisWeek },
         ].map((s) => (
           <Card key={s.label}>
             <CardHeader className="pb-2">
               <CardDescription>{s.label}</CardDescription>
-              <div className="flex items-baseline gap-2">
-                <CardTitle className="text-2xl">{s.value}</CardTitle>
-                <span className="text-xs font-medium text-green-600">{s.change}</span>
-              </div>
+              <CardTitle className="text-2xl">{s.value.toLocaleString()}</CardTitle>
             </CardHeader>
           </Card>
         ))}
@@ -83,27 +82,34 @@ export default function AdminUsersPage() {
             </tr>
           </thead>
           <tbody>
-            {sampleUsers.map((user) => (
+            {users.map((user) => {
+              const status = user.bannedAt ? "SUSPENDED" : user.status;
+
+              return (
               <tr key={user.id} className="border-b last:border-0">
                 <td className="px-6 py-4">
                   <div>
-                    <div className="font-medium">{user.name}</div>
+                    <div className="font-medium">{user.displayName ?? user.name ?? user.email}</div>
                     <div className="text-xs text-muted-foreground">{user.email}</div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <Badge className={roleColors[user.role]}>{user.role}</Badge>
+                  <Badge className={roleColors[user.role] ?? ""}>{user.role}</Badge>
                 </td>
                 <td className="px-6 py-4">
-                  <Badge className={statusColors[user.status]}>{user.status}</Badge>
+                  <Badge className={statusColors[status] ?? ""}>{status}</Badge>
                 </td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{user.joinDate}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{user.createdAt.toLocaleDateString("en", { dateStyle: "medium" })}</td>
                 <td className="px-6 py-4 text-sm">{user.xp.toLocaleString()}</td>
                 <td className="px-6 py-4">
                   <Button variant="ghost" size="sm">Edit</Button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
+            {!users.length && (
+              <tr><td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">No user records found.</td></tr>
+            )}
           </tbody>
         </table>
       </div>

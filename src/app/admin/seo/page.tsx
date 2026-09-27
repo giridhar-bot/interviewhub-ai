@@ -8,36 +8,16 @@ import {
   LinkIcon,
   GlobeAltIcon,
   ChartBarIcon,
-  ExclamationTriangleIcon,
   CheckCircleIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import { analyticsRepository } from "@/repositories/analytics.repository";
 
 export const metadata: Metadata = {
   title: "SEO Dashboard",
   description: "Monitor SEO health, sitemaps, meta tags, and content quality.",
   robots: { index: false, follow: false },
 };
-
-const seoChecklist = [
-  { label: "Sitemap generated", status: "pass", detail: "sitemap.xml auto-generated" },
-  { label: "robots.txt configured", status: "pass", detail: "Proper allow/disallow rules" },
-  { label: "Canonical URLs", status: "pass", detail: "All pages have canonical URLs" },
-  { label: "OG images", status: "pass", detail: "Dynamic OG image API active" },
-  { label: "JSON-LD structured data", status: "pass", detail: "Organization, Website, BreadcrumbList, Article, FAQPage, Course" },
-  { label: "Meta descriptions", status: "warning", detail: "Check new pages for unique descriptions" },
-  { label: "Internal linking", status: "pass", detail: "Auto-linking engine active" },
-  { label: "Mobile-first design", status: "pass", detail: "Responsive layouts throughout" },
-  { label: "Security headers", status: "pass", detail: "CSP, HSTS, X-Frame-Options configured" },
-  { label: "HTTPS enforced", status: "pass", detail: "All traffic over HTTPS" },
-];
-
-const contentMetrics = [
-  { label: "Topics", icon: GlobeAltIcon, count: "50+", status: "Published" },
-  { label: "Articles", icon: DocumentTextIcon, count: "0", status: "Draft" },
-  { label: "Companies", icon: ChartBarIcon, count: "12", status: "Seeded" },
-  { label: "Redirects", icon: LinkIcon, count: "0", status: "Active" },
-];
 
 const seoModules = [
   {
@@ -78,7 +58,11 @@ const seoModules = [
   },
 ];
 
-export default function SEODashboardPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SEODashboardPage() {
+  const overview = await analyticsRepository.getAdminOverview(30);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
@@ -96,21 +80,29 @@ export default function SEODashboardPage() {
       <Separator className="my-6" />
 
       {/* Content Metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {contentMetrics.map((metric) => (
-          <Card key={metric.label}>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {overview.content.map((metric) => {
+          const MetricIcon = metric.type === "Topics"
+            ? GlobeAltIcon
+            : metric.type === "Articles"
+              ? DocumentTextIcon
+              : ChartBarIcon;
+
+          return (
+          <Card key={metric.type}>
             <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
-              <metric.icon className="h-5 w-5 text-violet-600" />
+              <MetricIcon className="h-5 w-5 text-violet-600" />
               <div>
-                <CardDescription>{metric.label}</CardDescription>
+                <CardDescription>{metric.type}</CardDescription>
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-2xl">{metric.count}</CardTitle>
-                  <Badge variant="secondary" className="text-xs">{metric.status}</Badge>
+                  <CardTitle className="text-2xl">{metric.total.toLocaleString()}</CardTitle>
+                  <Badge variant="secondary" className="text-xs">{metric.published.toLocaleString()} published</Badge>
                 </div>
               </div>
             </CardHeader>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* SEO Modules */}
@@ -133,36 +125,6 @@ export default function SEODashboardPage() {
         ))}
       </div>
 
-      {/* Technical SEO Checklist */}
-      <h2 className="mt-10 text-xl font-bold">Technical SEO Checklist</h2>
-      <div className="mt-4 space-y-2">
-        {seoChecklist.map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center gap-3 rounded-lg border bg-card p-3"
-          >
-            {item.status === "pass" ? (
-              <CheckCircleIcon className="h-5 w-5 shrink-0 text-green-600" />
-            ) : (
-              <ExclamationTriangleIcon className="h-5 w-5 shrink-0 text-amber-500" />
-            )}
-            <div className="flex-1">
-              <p className="text-sm font-medium">{item.label}</p>
-              <p className="text-xs text-muted-foreground">{item.detail}</p>
-            </div>
-            <Badge
-              variant="secondary"
-              className={`text-xs ${
-                item.status === "pass"
-                  ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
-                  : "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-              }`}
-            >
-              {item.status === "pass" ? "Pass" : "Warning"}
-            </Badge>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

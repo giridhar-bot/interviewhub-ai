@@ -1,70 +1,125 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { ArrowRightIcon, ArrowUpRightIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import { SparklesIcon } from "@heroicons/react/24/solid";
+import { Button } from "@/components/ui/button";
 
-export function HeroSection() {
+type HeroTopic = { name: string; slug: string; category: string };
+
+export function HeroSection({
+  topics,
+  totalTopics,
+}: {
+  topics: HeroTopic[];
+  totalTopics: number;
+}) {
+  const featuredTopics = topics.slice(0, 4);
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-violet-50/50 via-background to-background py-20 sm:py-32">
-      {/* Background Grid */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#8882_1px,transparent_1px),linear-gradient(to_bottom,#8882_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mx-auto max-w-3xl text-center"
-        >
-          <Badge
-            variant="secondary"
-            className="mb-6 gap-1.5 rounded-full px-4 py-1.5 text-sm"
+    <section className="relative isolate overflow-hidden border-b bg-background">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-border)_1px,transparent_1px)] [background-size:34px_34px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)]"
+      />
+      <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-20">
+        <div className="grid items-center gap-6 md:grid-cols-2 lg:gap-16">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="max-w-2xl"
           >
-            <SparklesIcon className="h-3.5 w-3.5 text-violet-600" />
-            AI-Powered Interview Preparation
-          </Badge>
+            <div className="inline-flex items-center gap-2 border-l-2 border-emerald-500 pl-3 text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+              <SparklesIcon className="h-4 w-4" />
+              InterviewHub AI · Preparation workspace
+            </div>
 
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
-            Ace Every Interview with{" "}
-            <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              AI-Powered
-            </span>{" "}
-            Preparation
-          </h1>
+            <h1 className="mt-5 max-w-xl text-3xl font-extrabold leading-tight text-foreground sm:text-5xl lg:text-6xl">
+              Make your next interview your best one.
+            </h1>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-lg sm:leading-7">
+              Build interview readiness with published topic guides, coding practice, company prep, and AI tools in one workspace.
+            </p>
 
-          <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:mt-6 sm:text-lg md:text-xl">
-            The all-in-one platform for interview prep — notes, coding practice,
-            AI mock interviews, resume review, roadmaps, and 50+ tech stacks.
-            Everything you need in one place.
-          </p>
+            <div className="mt-6 flex flex-col gap-3 min-[480px]:flex-row">
+              <Link href="/auth/register">
+                <Button size="lg" className="h-11 w-full gap-2 bg-emerald-500 px-5 text-sm font-semibold text-slate-950 hover:bg-emerald-400 min-[480px]:w-auto sm:h-12 sm:px-6 sm:text-base">
+                  Start preparing
+                  <ArrowRightIcon className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/topics">
+                <Button variant="outline" size="lg" className="h-11 w-full gap-2 px-5 text-sm min-[480px]:w-auto sm:h-12 sm:px-6 sm:text-base">
+                  Browse topics
+                  <ArrowUpRightIcon className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
 
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link href="/auth/register">
-              <Button
-                size="lg"
-                className="h-11 w-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-6 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:from-violet-700 hover:to-indigo-700 hover:shadow-violet-500/40 sm:h-12 sm:w-auto sm:px-8 sm:text-base"
-              >
-                Start Preparing — It&apos;s Free
-              </Button>
-            </Link>
-            <Link href="/topics">
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-11 w-full rounded-full px-6 text-sm font-semibold sm:h-12 sm:w-auto sm:px-8 sm:text-base"
-              >
-                Explore Topics
-              </Button>
-            </Link>
-          </div>
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                {totalTopics.toLocaleString()} published topics
+              </span>
+              <span>Free to get started</span>
+            </div>
+          </motion.div>
 
-          <p className="mt-4 text-sm text-muted-foreground">
-            No credit card required · Free forever plan available
-          </p>
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="relative mx-auto w-full max-w-xl"
+          >
+            <div aria-hidden="true" className="absolute -right-3 -top-3 h-16 w-16 border-r-2 border-t-2 border-orange-400/80" />
+            <div className="relative overflow-hidden rounded-lg border bg-card shadow-xl">
+              <div className="flex items-center justify-between border-b px-5 py-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Live library</p>
+                  <p className="mt-1 text-lg font-bold">Explore a topic</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+                  <SparklesIcon className="h-5 w-5" />
+                </div>
+              </div>
+
+              {featuredTopics.length ? (
+                <div className="divide-y">
+                  {featuredTopics.map((topic, index) => (
+                    <Link
+                      key={topic.slug}
+                      href={`/topics/${topic.slug}`}
+                      className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/60"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted font-mono text-xs text-muted-foreground">
+                        0{index + 1}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold group-hover:text-emerald-700 dark:group-hover:text-emerald-300">
+                          {topic.name}
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">{topic.category}</span>
+                      </span>
+                      <ArrowUpRightIcon className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+                  Published topics will appear here.
+                </p>
+              )}
+
+              <div className="flex items-center justify-between border-t bg-muted/30 px-5 py-3 text-xs text-muted-foreground">
+                <span>Browse the learning library</span>
+                <Link href="/topics" className="font-semibold text-foreground hover:text-emerald-700 dark:hover:text-emerald-300">
+                  View all <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

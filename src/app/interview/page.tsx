@@ -2,6 +2,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { generateSEO } from "@/lib/seo";
+import { topicRepository } from "@/repositories/topic.repository";
 import {
   ChatBubbleLeftRightIcon,
   CodeBracketIcon,
@@ -12,7 +13,7 @@ import {
 export const metadata = generateSEO({
   title: "Interview Preparation — Technical, HR & Coding",
   description:
-    "Prepare for technical, HR, and coding interviews with curated questions, tips, AI mock interviews, and real interview experiences. 10,000+ questions across 50+ topics.",
+    "Prepare for technical, HR, and coding interviews with published questions, tips, AI mock interviews, and real interview experiences.",
   path: "/interview",
   keywords: ["interview preparation", "technical interview", "HR interview", "coding interview", "mock interview", "interview questions"],
 });
@@ -56,13 +57,11 @@ const interviewTypes = [
   },
 ];
 
-const popularTopics = [
-  "Java", "React", "Spring Boot", "AWS", "JavaScript",
-  "Python", "Node.js", "SQL", "System Design", "Docker",
-  "TypeScript", "SAP", ".NET", "Kubernetes", "Angular",
-];
+export const dynamic = "force-dynamic";
 
-export default function InterviewPage() {
+export default async function InterviewPage() {
+  const popularTopics = await topicRepository.findPublishedSummaries();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl text-center">
@@ -115,14 +114,14 @@ export default function InterviewPage() {
         <div className="mt-6 flex flex-wrap gap-3">
           {popularTopics.map((topic) => (
             <Link
-              key={topic}
-              href={`/topics/${topic.toLowerCase().replace(/[\s.]+/g, "-")}`}
+              key={topic.id}
+              href={`/topics/${topic.slug}`}
             >
               <Badge
                 variant="outline"
                 className="cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-violet-50 hover:border-violet-300 hover:text-violet-700"
               >
-                {topic} Interview Questions
+                {topic.name} Interview Questions
               </Badge>
             </Link>
           ))}

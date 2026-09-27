@@ -33,15 +33,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await resumeService.analyzeResume(
-    user.id,
-    parsed.data.fileName,
-    parsed.data.fileUrl,
-    parsed.data.resumeText,
-    parsed.data.targetRole
-  );
+  try {
+    const result = await resumeService.analyzeResume(
+      user.id,
+      parsed.data.fileName,
+      parsed.data.fileUrl,
+      parsed.data.resumeText,
+      parsed.data.targetRole
+    );
 
-  return NextResponse.json(result);
+    return NextResponse.json(result);
+  } catch {
+    return NextResponse.json(
+      { error: "Resume analysis could not be completed. Please try again." },
+      { status: 502 }
+    );
+  }
 }
 
 // GET /api/ai/resume — List reviews

@@ -2,13 +2,9 @@
 
 import { motion } from "framer-motion";
 
-const companies = [
-  "Google", "Microsoft", "Amazon", "Meta", "Apple",
-  "Netflix", "Flipkart", "Infosys", "TCS", "Wipro",
-  "Accenture", "Deloitte",
-];
+type Company = { name: string; slug: string };
 
-export function TrustedBySection() {
+export function TrustedBySection({ companies }: { companies: Company[] }) {
   return (
     <section className="border-b py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -18,19 +14,19 @@ export function TrustedBySection() {
           viewport={{ once: true }}
           className="mb-6 text-center text-sm font-medium text-muted-foreground"
         >
-          Trusted by engineers preparing for top companies
+          Companies in our interview preparation library
         </motion.p>
         <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8 sm:gap-y-4">
-          {companies.map((company, i) => (
+          {companies.map((company, index) => (
             <motion.span
-              key={company}
+              key={company.slug}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ delay: index * 0.05 }}
               className="text-sm font-semibold text-muted-foreground/50 transition-colors hover:text-foreground sm:text-lg"
             >
-              {company}
+              {company.name}
             </motion.span>
           ))}
         </div>

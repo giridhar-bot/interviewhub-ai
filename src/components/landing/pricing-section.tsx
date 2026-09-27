@@ -77,7 +77,7 @@ export function PricingSection() {
         >
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Simple, Transparent{" "}
-            <span className="text-gradient">Pricing</span>
+            <span className="bg-gradient-to-r from-emerald-700 to-green-500 bg-clip-text text-transparent">Pricing</span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
             Start free. Upgrade when you&apos;re ready to go premium.
@@ -96,12 +96,12 @@ export function PricingSection() {
               <Card
                 className={`relative h-full overflow-visible ${
                   plan.popular
-                    ? "border-primary shadow-xl glow-violet mt-4 sm:mt-0"
+                    ? "border-emerald-300 shadow-xl shadow-emerald-500/15 mt-4 sm:mt-0"
                     : "border-border/50"
                 }`}
               >
                 {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 bg-brand-gradient text-white px-4 py-1 whitespace-nowrap">
+                  <Badge className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-1 whitespace-nowrap">
                     Most Popular
                   </Badge>
                 )}
@@ -124,7 +124,7 @@ export function PricingSection() {
                     <Button
                       className={`w-full h-11 ${
                         plan.popular
-                          ? "bg-brand-gradient text-white hover:opacity-90"
+                          ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700"
                           : ""
                       }`}
                       variant={plan.popular ? "default" : "outline"}
@@ -135,7 +135,7 @@ export function PricingSection() {
                   <ul className="space-y-3">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
-                        <CheckIcon className="h-5 w-5 shrink-0 text-primary" />
+                        <CheckIcon className="h-5 w-5 shrink-0 text-emerald-600" />
                         <span className="text-sm text-muted-foreground">
                           {feature}
                         </span>

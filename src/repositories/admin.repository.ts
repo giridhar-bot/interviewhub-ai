@@ -6,6 +6,80 @@ import { prisma } from "@/lib/prisma";
 import type { AuditAction, ReportStatus } from "@/generated/prisma/client";
 
 export const adminRepository = {
+  async getCompanyAdminList(limit = 100) {
+    return prisma.company.findMany({
+      where: { deletedAt: null },
+      orderBy: { name: "asc" },
+      take: limit,
+      include: {
+        _count: { select: { questions: true, experiences: true, salaryInsights: true } },
+      },
+    });
+  },
+
+  async getUserAdminList(limit = 50) {
+    return prisma.user.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        displayName: true,
+        email: true,
+        role: true,
+        status: true,
+        bannedAt: true,
+        createdAt: true,
+        xp: true,
+      },
+    });
+  },
+
+  async getUserAdminStats() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - 6);
+
+    const [total, activeToday, premium, newThisWeek] = await Promise.all([
+      prisma.user.count({ where: { deletedAt: null } }),
+      prisma.user.count({ where: { deletedAt: null, lastActiveAt: { gte: today } } }),
+      prisma.user.count({ where: { deletedAt: null, plan: { not: "FREE" } } }),
+      prisma.user.count({ where: { deletedAt: null, createdAt: { gte: weekStart } } }),
+    ]);
+
+    return { total, activeToday, premium, newThisWeek };
+  },
+
+  async getCodingProblemAdminData(limit = 100) {
+    const where = { deletedAt: null };
+    const [problems, total, difficulties] = await Promise.all([
+      prisma.codingProblem.findMany({
+        where,
+        orderBy: { updatedAt: "desc" },
+        take: limit,
+        include: { _count: { select: { submissions: true } } },
+      }),
+      prisma.codingProblem.count({ where }),
+      prisma.codingProblem.groupBy({
+        by: ["difficulty"],
+        where,
+        _count: true,
+      }),
+    ]);
+
+    return {
+      problems,
+      total,
+      difficulties: {
+        EASY: difficulties.find((item) => item.difficulty === "EASY")?._count ?? 0,
+        MEDIUM: difficulties.find((item) => item.difficulty === "MEDIUM")?._count ?? 0,
+        HARD: difficulties.find((item) => item.difficulty === "HARD")?._count ?? 0,
+      },
+    };
+  },
+
   // ── Audit Logs ──────────────────────────────
   async createAuditLog(data: {
     userId?: string;
@@ -91,6 +165,12 @@ export const adminRepository = {
   // ── System Settings ─────────────────────────
   async getSetting(key: string) {
     return prisma.systemSetting.findUnique({ where: { key } });
+  },
+
+  async getSettings() {
+    return prisma.systemSetting.findMany({
+      orderBy: [{ category: "asc" }, { key: "asc" }],
+    });
   },
 
   async updateSetting(key: string, value: unknown, updatedBy?: string) {

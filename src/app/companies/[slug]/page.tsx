@@ -1,66 +1,56 @@
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { generateCompanySEO } from "@/lib/seo";
 import { breadcrumbJsonLd } from "@/lib/json-ld";
+import {
+  getCompanyExperiences,
+  getCompanyProfile,
+  getCompanyQuestions,
+  getCompanySalaries,
+} from "@/services/company-prep.service";
 import type { Metadata } from "next";
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const dynamic = "force-dynamic";
+
+const difficultyLabels: Record<string, string> = {
+  EASY: "Easy",
+  MEDIUM: "Medium",
+  HARD: "Hard",
+};
+
+function formatAmount(value: number | null, currency: string) {
+  if (value === null) return "Not reported";
+  return `${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value)} ${currency}`;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const company = await getCompanyProfile(slug);
+
   return generateCompanySEO({
-    name: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    name: company?.name ?? slug.replace(/-/g, " "),
     slug,
-    description: `Prepare for interviews at ${slug.replace(/-/g, " ")} with real interview questions, experiences, salary insights, and preparation plans.`,
+    description: company?.description ?? "Published company profile and interview preparation data.",
   });
 }
 
-const tabs = [
-  { label: "Overview", id: "overview" },
-  { label: "Questions", id: "questions" },
-  { label: "Experiences", id: "experiences" },
-  { label: "Salary", id: "salary" },
-];
-
-const sampleQuestions = [
-  { title: "Design a URL Shortener", type: "System Design", difficulty: "Medium" },
-  { title: "Two Sum", type: "Coding", difficulty: "Easy" },
-  { title: "Tell me about a time you led a project", type: "Behavioral", difficulty: "Medium" },
-  { title: "Why do you want to work here?", type: "HR", difficulty: "Easy" },
-  { title: "LRU Cache", type: "Coding", difficulty: "Medium" },
-  { title: "Design Twitter Feed", type: "System Design", difficulty: "Hard" },
-];
-
-const sampleExperiences = [
-  { role: "SDE-1", result: "Selected", rounds: 4, yoe: 2, date: "Jan 2025" },
-  { role: "SDE-2", result: "Rejected", rounds: 5, yoe: 4, date: "Dec 2024" },
-  { role: "SDE-1", result: "Selected", rounds: 4, yoe: 1, date: "Nov 2024" },
-];
-
-const difficultyColors: Record<string, string> = {
-  Easy: "text-green-600 bg-green-50",
-  Medium: "text-yellow-600 bg-yellow-50",
-  Hard: "text-red-600 bg-red-50",
-};
-
-const typeColors: Record<string, string> = {
-  Coding: "bg-blue-50 text-blue-600",
-  "System Design": "bg-purple-50 text-purple-600",
-  Behavioral: "bg-orange-50 text-orange-600",
-  HR: "bg-green-50 text-green-600",
-};
-
-const resultColors: Record<string, string> = {
-  Selected: "text-green-600",
-  Rejected: "text-red-600",
-};
-
 export default async function CompanyDetailPage({ params }: Props) {
   const { slug } = await params;
-  const name = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const company = await getCompanyProfile(slug);
+
+  if (!company) notFound();
+
+  const [questionResult, experienceResult, salaryResult] = await Promise.all([
+    getCompanyQuestions(company.id, { page: 1, limit: 6 }),
+    getCompanyExperiences(company.id, 1, 3),
+    getCompanySalaries(company.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -71,24 +61,28 @@ export default async function CompanyDetailPage({ params }: Props) {
             breadcrumbJsonLd([
               { name: "Home", href: "/" },
               { name: "Companies", href: "/companies" },
-              { name, href: `/companies/${slug}` },
+              { name: company.name, href: `/companies/${slug}` },
             ])
           ),
         }}
       />
 
-      {/* Company Header */}
       <div className="flex items-start gap-6">
         <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 text-3xl font-bold text-violet-600">
-          {name[0]}
+          {company.name[0]}
         </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-extrabold tracking-tight">{name}</h1>
-          <p className="mt-1 text-muted-foreground">Technology • San Francisco, CA</p>
-          <div className="mt-3 flex gap-2">
-            <Badge variant="secondary">120 Questions</Badge>
-            <Badge variant="secondary">45 Experiences</Badge>
-            <Badge variant="secondary">80 Salaries</Badge>
+          <h1 className="text-3xl font-extrabold tracking-tight">{company.name}</h1>
+          <p className="mt-1 text-muted-foreground">
+            {[company.industry, company.headquarters].filter(Boolean).join(" • ") || "Company profile"}
+          </p>
+          {company.description && (
+            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{company.description}</p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge variant="secondary">{company._count.questions} Questions</Badge>
+            <Badge variant="secondary">{company._count.experiences} Experiences</Badge>
+            <Badge variant="secondary">{company._count.salaryInsights} Salary Reports</Badge>
           </div>
         </div>
         <Button>Create Prep Plan</Button>
@@ -96,128 +90,123 @@ export default async function CompanyDetailPage({ params }: Props) {
 
       <Separator className="my-8" />
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-violet-600">4-5</CardTitle>
-            <CardDescription>Interview Rounds</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-green-600">35%</CardTitle>
-            <CardDescription>Selection Rate</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-blue-600">₹25L</CardTitle>
-            <CardDescription>Avg Base (SDE-1)</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-orange-600">2-4 weeks</CardTitle>
-            <CardDescription>Process Duration</CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {[
+          { label: "Interview Rounds", value: company.interviewRounds.length },
+          { label: "Published Questions", value: company._count.questions },
+          { label: "Experiences", value: company._count.experiences },
+          { label: "Salary Reports", value: company._count.salaryInsights },
+        ].map((stat) => (
+          <Card key={stat.label}>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold">{stat.value}</CardTitle>
+              <CardDescription>{stat.label}</CardDescription>
+            </CardHeader>
+          </Card>
+        ))}
       </div>
 
-      {/* Interview Questions */}
-      <div className="mt-12">
+      <section className="mt-12">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Interview Questions</h2>
           <Link href={`/companies/${slug}/questions`}>
-            <Button variant="outline" className="rounded-full">View All</Button>
+            <Button variant="outline">View All</Button>
           </Link>
         </div>
-        <div className="mt-6 overflow-hidden rounded-xl border">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Question</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Type</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Difficulty</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sampleQuestions.map((q, i) => (
-                <tr key={i} className="cursor-pointer border-b transition-colors hover:bg-muted/30 last:border-0">
-                  <td className="px-6 py-4 font-medium">{q.title}</td>
-                  <td className="px-6 py-4">
-                    <Badge className={typeColors[q.type]}>{q.type}</Badge>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${difficultyColors[q.difficulty]}`}>
-                      {q.difficulty}
-                    </span>
-                  </td>
+        {questionResult.questions.length ? (
+          <div className="mt-6 overflow-hidden rounded-xl border">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Question</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Type</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Difficulty</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {questionResult.questions.map((question) => (
+                  <tr key={question.id} className="border-b last:border-0">
+                    <td className="px-6 py-4 font-medium">{question.title}</td>
+                    <td className="px-6 py-4"><Badge variant="outline">{question.type.replace(/_/g, " ")}</Badge></td>
+                    <td className="px-6 py-4 text-sm">{difficultyLabels[question.difficulty] ?? question.difficulty}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-6 rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+            No published interview questions for this company yet.
+          </p>
+        )}
+      </section>
 
-      {/* Interview Experiences */}
-      <div className="mt-12">
+      <section className="mt-12">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Interview Experiences</h2>
           <Link href={`/companies/${slug}/experiences`}>
-            <Button variant="outline" className="rounded-full">View All</Button>
+            <Button variant="outline">View All</Button>
           </Link>
         </div>
-        <div className="mt-6 space-y-4">
-          {sampleExperiences.map((exp, i) => (
-            <Card key={i} className="cursor-pointer transition-all hover:shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-base">{exp.role} Interview</CardTitle>
-                  <CardDescription>{exp.rounds} rounds • {exp.yoe} YoE • {exp.date}</CardDescription>
-                </div>
-                <span className={`text-sm font-semibold ${resultColors[exp.result]}`}>
-                  {exp.result}
-                </span>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </div>
+        {experienceResult.experiences.length ? (
+          <div className="mt-6 space-y-4">
+            {experienceResult.experiences.map((experience) => (
+              <Card key={experience.id}>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base">{experience.role} Interview</CardTitle>
+                    <CardDescription>
+                      {experience.rounds} rounds{experience.yoe !== null ? ` • ${experience.yoe} YoE` : ""}
+                      {` • ${experience.createdAt.toLocaleDateString("en", { month: "short", year: "numeric" })}`}
+                    </CardDescription>
+                    <p className="mt-3 line-clamp-3 text-sm">{experience.content}</p>
+                  </div>
+                  <Badge variant="outline">{experience.result.replace(/_/g, " ")}</Badge>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-6 rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+            No published interview experiences for this company yet.
+          </p>
+        )}
+      </section>
 
-      {/* Salary Insights */}
-      <div className="mt-12">
+      <section className="mt-12">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Salary Insights</h2>
           <Link href={`/companies/${slug}/salary`}>
-            <Button variant="outline" className="rounded-full">View All</Button>
+            <Button variant="outline">View All</Button>
           </Link>
         </div>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { role: "SDE-1", base: "₹18-28L", total: "₹22-35L", reports: 25 },
-            { role: "SDE-2", base: "₹30-45L", total: "₹38-55L", reports: 18 },
-            { role: "SDE-3", base: "₹50-70L", total: "₹65-90L", reports: 8 },
-          ].map((s) => (
-            <Card key={s.role}>
-              <CardHeader>
-                <CardTitle className="text-base">{s.role}</CardTitle>
-                <div className="mt-2 space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Base</span>
-                    <span className="font-medium">{s.base}</span>
+        {salaryResult.salaries.length ? (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {salaryResult.salaries.slice(0, 6).map((salary) => (
+              <Card key={salary.role}>
+                <CardHeader>
+                  <CardTitle className="text-base">{salary.role}</CardTitle>
+                  <div className="mt-2 space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Average Base</span>
+                      <span className="font-medium">{formatAmount(salary.avgBaseSalary, salary.currency)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Average Total</span>
+                      <span className="font-medium">{formatAmount(salary.avgTotalComp, salary.currency)}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{salary.count} reports</div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Comp</span>
-                    <span className="font-medium">{s.total}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">{s.reports} reports</div>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-6 rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+            No salary reports for this company yet.
+          </p>
+        )}
+      </section>
     </div>
   );
 }

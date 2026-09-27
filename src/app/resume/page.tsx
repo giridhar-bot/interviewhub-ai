@@ -30,9 +30,9 @@ const features = [
   },
   {
     title: "Templates",
-    description: "Choose from 10+ professional templates optimized for different industries.",
+    description: "Choose from the available resume layout presets.",
     href: "/resume/templates",
-    badge: "10+ Templates",
+    badge: "Templates",
     color: "from-blue-500 to-cyan-500",
   },
   {
@@ -42,13 +42,6 @@ const features = [
     badge: "Smart",
     color: "from-orange-500 to-red-500",
   },
-];
-
-const stats = [
-  { label: "Resumes Created", value: "10K+" },
-  { label: "Avg ATS Score", value: "85%" },
-  { label: "Templates", value: "12" },
-  { label: "Job Offers", value: "2.5K+" },
 ];
 
 export default function ResumePage() {
@@ -85,16 +78,6 @@ export default function ResumePage() {
             <Button size="lg" variant="outline">Browse Templates</Button>
           </Link>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="mt-12 grid grid-cols-4 gap-4 rounded-2xl border bg-card p-6">
-        {stats.map((s) => (
-          <div key={s.label} className="text-center">
-            <div className="text-3xl font-bold text-violet-600">{s.value}</div>
-            <div className="text-sm text-muted-foreground">{s.label}</div>
-          </div>
-        ))}
       </div>
 
       {/* Features */}

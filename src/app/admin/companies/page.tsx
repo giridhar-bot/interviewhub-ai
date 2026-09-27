@@ -1,8 +1,8 @@
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { generateSEO } from "@/lib/seo";
+import { adminRepository } from "@/repositories/admin.repository";
 
 export const metadata = generateSEO({
   title: "Company Management — Admin",
@@ -13,20 +13,16 @@ export const metadata = generateSEO({
 
 export const dynamic = "force-dynamic";
 
-const sampleCompanies = [
-  { name: "Google", status: "Published", questions: 120, experiences: 45, salaries: 80 },
-  { name: "Amazon", status: "Published", questions: 150, experiences: 62, salaries: 95 },
-  { name: "Microsoft", status: "Published", questions: 95, experiences: 38, salaries: 70 },
-  { name: "Meta", status: "Published", questions: 88, experiences: 30, salaries: 55 },
-  { name: "Apple", status: "Draft", questions: 45, experiences: 15, salaries: 30 },
-];
-
 const statusColors: Record<string, string> = {
-  Published: "bg-green-50 text-green-600",
-  Draft: "bg-yellow-50 text-yellow-600",
+  PUBLISHED: "bg-green-50 text-green-600",
+  DRAFT: "bg-yellow-50 text-yellow-600",
+  REVIEW: "bg-blue-50 text-blue-600",
+  ARCHIVED: "bg-muted text-muted-foreground",
 };
 
-export default function AdminCompaniesPage() {
+export default async function AdminCompaniesPage() {
+  const companies = await adminRepository.getCompanyAdminList();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
@@ -52,20 +48,27 @@ export default function AdminCompaniesPage() {
             </tr>
           </thead>
           <tbody>
-            {sampleCompanies.map((c) => (
-              <tr key={c.name} className="border-b last:border-0">
-                <td className="px-6 py-4 font-medium">{c.name}</td>
+            {companies.map((company) => (
+              <tr key={company.id} className="border-b last:border-0">
+                <td className="px-6 py-4 font-medium">{company.name}</td>
                 <td className="px-6 py-4">
-                  <Badge className={statusColors[c.status]}>{c.status}</Badge>
+                  <Badge className={statusColors[company.status] ?? ""}>{company.status}</Badge>
                 </td>
-                <td className="px-6 py-4 text-sm">{c.questions}</td>
-                <td className="px-6 py-4 text-sm">{c.experiences}</td>
-                <td className="px-6 py-4 text-sm">{c.salaries}</td>
+                <td className="px-6 py-4 text-sm">{company._count.questions}</td>
+                <td className="px-6 py-4 text-sm">{company._count.experiences}</td>
+                <td className="px-6 py-4 text-sm">{company._count.salaryInsights}</td>
                 <td className="px-6 py-4">
                   <Button variant="ghost" size="sm">Edit</Button>
                 </td>
               </tr>
             ))}
+            {!companies.length && (
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                  No company records found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

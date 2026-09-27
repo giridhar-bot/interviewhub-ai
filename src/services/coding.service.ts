@@ -64,7 +64,7 @@ export async function getProblems(options?: {
 }
 
 export async function getProblem(slug: string) {
-  const cacheKey = `problem:${slug}`;
+  const cacheKey = `problem:v2:${slug}`;
   const cached = await getCache<Awaited<ReturnType<typeof fetchProblem>>>(cacheKey);
   if (cached) return cached;
 
@@ -82,6 +82,7 @@ async function fetchProblem(slug: string) {
       problemCompanies: {
         include: { company: { select: { name: true, slug: true } } },
       },
+      _count: { select: { submissions: true } },
     },
   });
 }
@@ -148,17 +149,11 @@ export async function getUserSubmissions(userId: string, problemId?: string, pag
 // ─── User Problem Stats ─────────────────────
 
 export async function getUserCodingStats(userId: string) {
-  const [total, accepted, byDifficulty] = await Promise.all([
+  const [total, accepted] = await Promise.all([
     prisma.submission.count({ where: { userId } }),
     prisma.submission.groupBy({
       by: ["problemId"],
       where: { userId, status: "ACCEPTED" },
-    }),
-    prisma.codingProgress.findMany({
-      where: { userId, solved: true },
-      include: {
-        // We'll get the difficulty from a separate query
-      },
     }),
   ]);
 
@@ -201,15 +196,16 @@ export async function getContests(status?: "upcoming" | "active" | "past") {
     where,
     orderBy: { startTime: "desc" },
     include: {
-      _count: { select: { problems: true, submissions: true } },
+      _count: { select: { problems: true, submissions: true, participants: true } },
     },
   });
 }
 
 export async function getContest(slug: string) {
   return prisma.contest.findUnique({
-    where: { slug },
+    where: { slug, status: "PUBLISHED" },
     include: {
+      _count: { select: { problems: true, submissions: true, participants: true } },
       problems: {
         orderBy: { order: "asc" },
         include: {
@@ -251,6 +247,7 @@ export async function getProblemCategories() {
 export async function getProblemTags() {
   const tags = await prisma.problemTag.groupBy({
     by: ["tag"],
+    where: { problem: { status: "PUBLISHED", deletedAt: null } },
     _count: true,
     orderBy: { _count: { tag: "desc" } },
     take: 50,

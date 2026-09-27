@@ -186,18 +186,27 @@ export async function getCompanySalaries(companyId: string) {
   });
 
   // Aggregate by role
-  const byRole = new Map<string, { baseSalary: number[]; totalComp: number[]; count: number }>();
+  const byRole = new Map<string, {
+    role: string;
+    currency: string;
+    baseSalary: number[];
+    totalComp: number[];
+    count: number;
+  }>();
   for (const s of salaries) {
-    const key = s.role;
-    if (!byRole.has(key)) byRole.set(key, { baseSalary: [], totalComp: [], count: 0 });
+    const key = `${s.role}:${s.currency}`;
+    if (!byRole.has(key)) {
+      byRole.set(key, { role: s.role, currency: s.currency, baseSalary: [], totalComp: [], count: 0 });
+    }
     const r = byRole.get(key)!;
     if (s.baseSalary) r.baseSalary.push(s.baseSalary);
     if (s.totalComp) r.totalComp.push(s.totalComp);
     r.count++;
   }
 
-  const aggregated = Array.from(byRole.entries()).map(([role, data]) => ({
-    role,
+  const aggregated = Array.from(byRole.values()).map((data) => ({
+    role: data.role,
+    currency: data.currency,
     count: data.count,
     avgBaseSalary: data.baseSalary.length > 0
       ? Math.round(data.baseSalary.reduce((a, b) => a + b, 0) / data.baseSalary.length)

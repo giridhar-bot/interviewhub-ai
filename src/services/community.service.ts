@@ -37,7 +37,11 @@ export async function getPosts(options?: {
   };
 
   const orderBy: Prisma.PostOrderByWithRelationInput =
-    sort === "popular" ? { views: "desc" } : { createdAt: "desc" };
+    sort === "popular"
+      ? { views: "desc" }
+      : sort === "unanswered"
+        ? { comments: { _count: "asc" } }
+        : { createdAt: "desc" };
 
   const [posts, total] = await Promise.all([
     prisma.post.findMany({
@@ -54,6 +58,29 @@ export async function getPosts(options?: {
   ]);
 
   return { posts, total, pages: Math.ceil(total / limit) };
+}
+
+export async function getInterviewExperiences(limit = 20) {
+  return prisma.interviewExperience.findMany({
+    where: { status: "PUBLISHED", deletedAt: null },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    include: {
+      company: { select: { name: true, slug: true } },
+      author: { select: { id: true, name: true, image: true } },
+    },
+  });
+}
+
+export async function getStudyGroups(limit = 30) {
+  return prisma.studyGroup.findMany({
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    include: {
+      owner: { select: { id: true, displayName: true, avatar: true } },
+      _count: { select: { members: true } },
+    },
+  });
 }
 
 export async function getPost(slug: string) {

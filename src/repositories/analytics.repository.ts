@@ -5,6 +5,95 @@
 import { prisma } from "@/lib/prisma";
 
 export const analyticsRepository = {
+  async getAIUsageOverview() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const usage = await prisma.aIUsageHistory.findMany({
+      where: { createdAt: { gte: today } },
+      select: { feature: true, model: true, tokensUsed: true, cost: true },
+    });
+
+    const byModel = new Map<string, { requests: number; tokens: number; cost: number }>();
+    for (const entry of usage) {
+      const item = byModel.get(entry.model) ?? { requests: 0, tokens: 0, cost: 0 };
+      item.requests += 1;
+      item.tokens += entry.tokensUsed;
+      item.cost += entry.cost ?? 0;
+      byModel.set(entry.model, item);
+    }
+
+    return {
+      requests: usage.length,
+      tokens: usage.reduce((sum, entry) => sum + entry.tokensUsed, 0),
+      cost: usage.reduce((sum, entry) => sum + (entry.cost ?? 0), 0),
+      models: Array.from(byModel, ([model, totals]) => ({ model, ...totals })),
+    };
+  },
+
+  async getAdminOverview(days = 30) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const [
+      pageViews,
+      sessions,
+      singlePageSessions,
+      averageDuration,
+      topPageGroups,
+      topics,
+      publishedTopics,
+      articles,
+      publishedArticles,
+      questions,
+      publishedQuestions,
+      companies,
+      publishedCompanies,
+      codingProblems,
+      publishedCodingProblems,
+    ] = await Promise.all([
+      prisma.pageView.count({ where: { createdAt: { gte: since } } }),
+      prisma.sessionAnalytics.count({ where: { startedAt: { gte: since } } }),
+      prisma.sessionAnalytics.count({ where: { startedAt: { gte: since }, pageCount: 1 } }),
+      prisma.sessionAnalytics.aggregate({
+        where: { startedAt: { gte: since } },
+        _avg: { duration: true },
+      }),
+      prisma.pageView.groupBy({
+        by: ["path"],
+        where: { createdAt: { gte: since } },
+        _count: true,
+        orderBy: { _count: { path: "desc" } },
+        take: 8,
+      }),
+      prisma.topic.count({ where: { deletedAt: null } }),
+      prisma.topic.count({ where: { status: "PUBLISHED", deletedAt: null } }),
+      prisma.article.count({ where: { deletedAt: null } }),
+      prisma.article.count({ where: { status: "PUBLISHED", deletedAt: null } }),
+      prisma.question.count({ where: { deletedAt: null } }),
+      prisma.question.count({ where: { status: "PUBLISHED", deletedAt: null } }),
+      prisma.company.count({ where: { deletedAt: null } }),
+      prisma.company.count({ where: { status: "PUBLISHED", deletedAt: null } }),
+      prisma.codingProblem.count({ where: { deletedAt: null } }),
+      prisma.codingProblem.count({ where: { status: "PUBLISHED", deletedAt: null } }),
+    ]);
+
+    return {
+      pageViews,
+      sessions,
+      averageDurationSeconds: averageDuration._avg.duration ?? 0,
+      bounceRate: sessions ? (singlePageSessions / sessions) * 100 : 0,
+      topPages: topPageGroups.map(({ path, _count }) => ({ path, views: _count })),
+      content: [
+        { type: "Topics", total: topics, published: publishedTopics },
+        { type: "Articles", total: articles, published: publishedArticles },
+        { type: "Interview Questions", total: questions, published: publishedQuestions },
+        { type: "Companies", total: companies, published: publishedCompanies },
+        { type: "Coding Problems", total: codingProblems, published: publishedCodingProblems },
+      ],
+    };
+  },
+
   // ── Page Views ──────────────────────────────
   async trackPageView(data: {
     path: string;

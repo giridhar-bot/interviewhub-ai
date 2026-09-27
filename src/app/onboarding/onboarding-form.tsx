@@ -7,11 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-const TECH_STACKS = [
-  "JavaScript", "TypeScript", "Python", "Java", "C++",
-  "Go", "Rust", "C#", "Ruby", "Swift", "Kotlin", "PHP",
-];
-
 const CAREER_GOALS = [
   "Software Engineer", "Frontend Developer", "Backend Developer",
   "Full Stack Developer", "DevOps Engineer", "Data Scientist",
@@ -27,7 +22,7 @@ const EXPERIENCE_LEVELS = [
   { value: "staff", label: "Staff+ (10+ yrs)" },
 ];
 
-export function OnboardingForm({ userId, email }: { userId: string; email: string }) {
+export function OnboardingForm({ techStacks }: { userId: string; email: string; techStacks: string[] }) {
   const router = useRouter();
   const { update } = useSession();
   const [step, setStep] = useState(1);
@@ -197,7 +192,7 @@ export function OnboardingForm({ userId, email }: { userId: string; email: strin
             <div>
               <label className="text-sm font-medium">Select Your Tech Stack</label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {TECH_STACKS.map((tech) => (
+                {techStacks.map((tech) => (
                   <button
                     key={tech}
                     onClick={() => toggleTech(tech)}
@@ -226,7 +221,7 @@ export function OnboardingForm({ userId, email }: { userId: string; email: strin
               <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Back</Button>
               <Button
                 onClick={handleSubmit}
-                disabled={loading || formData.techStack.length === 0}
+                disabled={loading || (techStacks.length > 0 && formData.techStack.length === 0)}
                 className="flex-1 bg-brand-gradient text-white"
               >
                 {loading ? "Saving..." : "Complete Setup"}

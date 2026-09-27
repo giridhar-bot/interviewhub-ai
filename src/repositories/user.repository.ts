@@ -6,6 +6,26 @@ import { prisma } from "@/lib/prisma";
 import type { RoleType } from "@/generated/prisma/client";
 
 export const userRepository = {
+  async getProfileById(id: string) {
+    return prisma.user.findUnique({
+      where: { id, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        displayName: true,
+        username: true,
+        bio: true,
+        image: true,
+        avatar: true,
+        role: true,
+        plan: true,
+        createdAt: true,
+        xp: true,
+        streak: true,
+      },
+    });
+  },
+
   async findById(id: string) {
     return prisma.user.findUnique({ where: { id } });
   },

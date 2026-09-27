@@ -1,45 +1,54 @@
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { auth } from "@/lib/auth";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import Link from "next/link";
+import { breadcrumbJsonLd } from "@/lib/json-ld";
 import { generateCodingProblemSEO } from "@/lib/seo";
-import { codingProblemJsonLd, breadcrumbJsonLd } from "@/lib/json-ld";
+import { getProblem, getProblems, getUserSubmissions } from "@/services/coding.service";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const dynamic = "force-dynamic";
+
+const difficultyColors: Record<string, string> = {
+  EASY: "text-green-600 bg-green-50",
+  MEDIUM: "text-yellow-600 bg-yellow-50",
+  HARD: "text-red-600 bg-red-50",
+};
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const problem = await getProblem(slug);
+
+  if (!problem) return { title: "Problem Not Found" };
+
   return generateCodingProblemSEO({
-    title: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    title: problem.title,
     slug,
-    difficulty: "Medium",
-    tags: ["DSA"],
+    difficulty: problem.difficulty,
+    tags: problem.tags,
   });
 }
 
-const sampleTestCases = [
-  { input: "nums = [2,7,11,15], target = 9", output: "[0,1]", explanation: "Because nums[0] + nums[1] == 9" },
-  { input: "nums = [3,2,4], target = 6", output: "[1,2]", explanation: "" },
-  { input: "nums = [3,3], target = 6", output: "[0,1]", explanation: "" },
-];
-
-const relatedProblems = [
-  { title: "Three Sum", slug: "three-sum", difficulty: "Medium" },
-  { title: "Four Sum", slug: "four-sum", difficulty: "Medium" },
-  { title: "Two Sum II", slug: "two-sum-ii", difficulty: "Medium" },
-];
-
-const difficultyColors: Record<string, string> = {
-  Easy: "text-green-600 bg-green-50",
-  Medium: "text-yellow-600 bg-yellow-50",
-  Hard: "text-red-600 bg-red-50",
-};
-
 export default async function CodingProblemPage({ params }: Props) {
   const { slug } = await params;
-  const title = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const problem = await getProblem(slug);
+
+  if (!problem) notFound();
+
+  const [relatedResult, session] = await Promise.all([
+    getProblems({ category: problem.category, limit: 6 }),
+    auth(),
+  ]);
+  const relatedProblems = relatedResult.problems.filter((item) => item.slug !== problem.slug).slice(0, 4);
+  const submissions = session?.user?.id
+    ? await getUserSubmissions(session.user.id, problem.id, 1, 10)
+    : [];
+  const constraints = problem.constraints?.split(/\r?\n/).filter(Boolean) ?? [];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -51,119 +60,105 @@ export default async function CodingProblemPage({ params }: Props) {
               { name: "Home", href: "/" },
               { name: "Coding", href: "/coding" },
               { name: "Problems", href: "/coding/problems" },
-              { name: title, href: `/coding/problems/${slug}` },
+              { name: problem.title, href: `/coding/problems/${slug}` },
             ])
           ),
         }}
       />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_350px]">
-        {/* Problem Description */}
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
-            <Badge className={difficultyColors["Medium"]}>Medium</Badge>
+            <h1 className="text-3xl font-extrabold tracking-tight">{problem.title}</h1>
+            <Badge className={difficultyColors[problem.difficulty]}>{problem.difficulty}</Badge>
           </div>
 
           <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
-            <span>Acceptance: 45%</span>
-            <span>Submissions: 12.5K</span>
-            <span>Likes: 890</span>
+            <span>Acceptance: {problem.acceptance.toFixed(1)}%</span>
+            <span>Submissions: {problem._count.submissions.toLocaleString()}</span>
           </div>
 
           <Separator className="my-6" />
-
-          <div className="prose prose-neutral dark:prose-invert max-w-none">
-            <p>
-              Given an array of integers <code>nums</code> and an integer <code>target</code>,
-              return <em>indices of the two numbers</em> such that they add up to{" "}
-              <code>target</code>.
-            </p>
-            <p>
-              You may assume that each input would have <strong>exactly one solution</strong>,
-              and you may not use the same element twice.
-            </p>
-            <p>You can return the answer in any order.</p>
+          <div className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-line">
+            {problem.description}
           </div>
 
-          {/* Test Cases */}
-          <div className="mt-8">
+          <section className="mt-8">
             <h2 className="text-xl font-bold">Examples</h2>
-            <div className="mt-4 space-y-4">
-              {sampleTestCases.map((tc, i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Example {i + 1}</CardTitle>
-                    <div className="mt-2 space-y-1 rounded-lg bg-muted/50 p-3 font-mono text-sm">
-                      <div><span className="text-muted-foreground">Input: </span>{tc.input}</div>
-                      <div><span className="text-muted-foreground">Output: </span>{tc.output}</div>
-                      {tc.explanation && (
-                        <div><span className="text-muted-foreground">Explanation: </span>{tc.explanation}</div>
-                      )}
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          </div>
+            {problem.testCases.length ? (
+              <div className="mt-4 space-y-4">
+                {problem.testCases.map((testCase, index) => (
+                  <Card key={testCase.id}>
+                    <CardHeader>
+                      <CardTitle className="text-sm">Example {index + 1}</CardTitle>
+                      <div className="mt-2 space-y-1 rounded-lg bg-muted/50 p-3 font-mono text-sm">
+                        <div><span className="text-muted-foreground">Input: </span>{testCase.input}</div>
+                        <div><span className="text-muted-foreground">Output: </span>{testCase.expected}</div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 rounded-lg border border-dashed p-6 text-center text-muted-foreground">
+                No public examples are available for this problem.
+              </p>
+            )}
+          </section>
 
-          {/* Constraints */}
-          <div className="mt-8">
-            <h2 className="text-xl font-bold">Constraints</h2>
-            <ul className="mt-4 list-disc space-y-1 pl-6 font-mono text-sm">
-              <li>2 ≤ nums.length ≤ 10⁴</li>
-              <li>-10⁹ ≤ nums[i] ≤ 10⁹</li>
-              <li>-10⁹ ≤ target ≤ 10⁹</li>
-              <li>Only one valid answer exists.</li>
-            </ul>
-          </div>
+          {constraints.length > 0 && (
+            <section className="mt-8">
+              <h2 className="text-xl font-bold">Constraints</h2>
+              <ul className="mt-4 list-disc space-y-1 pl-6 font-mono text-sm">
+                {constraints.map((constraint) => <li key={constraint}>{constraint}</li>)}
+              </ul>
+            </section>
+          )}
 
-          {/* Code Editor Placeholder */}
-          <div className="mt-8">
+          <section className="mt-8">
             <Card>
               <CardHeader>
                 <CardTitle>Code Editor</CardTitle>
-                <CardDescription>
-                  Select your language and write your solution below.
-                </CardDescription>
+                <CardDescription>Select your language and write your solution below.</CardDescription>
               </CardHeader>
               <div className="border-t p-6">
-                <div className="flex h-80 items-center justify-center rounded-lg border-2 border-dashed bg-muted/30">
-                  <div className="text-center text-muted-foreground">
-                    <p className="text-lg font-medium">Monaco Editor</p>
-                    <p className="text-sm">Code editor will load here</p>
-                  </div>
-                </div>
+                <textarea
+                  aria-label="Code solution"
+                  className="min-h-72 w-full resize-y rounded-lg border bg-background p-4 font-mono text-sm"
+                  placeholder="Write your solution"
+                />
                 <div className="mt-4 flex justify-end gap-3">
                   <Button variant="outline">Run Code</Button>
                   <Button>Submit Solution</Button>
                 </div>
               </div>
             </Card>
-          </div>
+          </section>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
+        <aside className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Problem Info</CardTitle>
             </CardHeader>
             <div className="space-y-3 px-6 pb-6 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Difficulty</span>
-                <Badge className={difficultyColors["Medium"]}>Medium</Badge>
-              </div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Difficulty</span><span>{problem.difficulty}</span></div>
               <Separator />
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Topic</span>
-                <span>Arrays, Hash Table</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Companies</span>
-                <span>Google, Amazon, Meta</span>
-              </div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Category</span><span>{problem.category}</span></div>
+              {problem.tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
+              {problem.problemCompanies.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="text-muted-foreground">Companies</div>
+                  <div className="flex flex-wrap gap-2">
+                    {problem.problemCompanies.map(({ company }) => (
+                      <Link key={company.slug} href={`/companies/${company.slug}`}>
+                        <Badge variant="secondary">{company.name}</Badge>
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </Card>
 
@@ -172,28 +167,40 @@ export default async function CodingProblemPage({ params }: Props) {
               <CardTitle className="text-sm">Related Problems</CardTitle>
             </CardHeader>
             <div className="space-y-2 px-6 pb-6">
-              {relatedProblems.map((rp) => (
+              {relatedProblems.length ? relatedProblems.map((related) => (
                 <Link
-                  key={rp.slug}
-                  href={`/coding/problems/${rp.slug}`}
+                  key={related.slug}
+                  href={`/coding/problems/${related.slug}`}
                   className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-muted/50"
                 >
-                  <span className="text-sm">{rp.title}</span>
-                  <span className={`text-xs ${difficultyColors[rp.difficulty]?.split(" ")[0]}`}>
-                    {rp.difficulty}
-                  </span>
+                  <span className="text-sm">{related.title}</span>
+                  <span className="text-xs text-muted-foreground">{related.difficulty}</span>
                 </Link>
-              ))}
+              )) : <p className="text-sm text-muted-foreground">No related problems yet.</p>}
             </div>
           </Card>
 
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Your Submissions</CardTitle>
-              <CardDescription>Login to see your submission history</CardDescription>
+              <CardDescription>
+                {session?.user ? "Your recent attempts for this problem." : "Sign in to view your submission history."}
+              </CardDescription>
             </CardHeader>
+            {session?.user && (
+              <div className="space-y-2 px-6 pb-6 text-sm">
+                {submissions.length ? submissions.map((submission) => (
+                  <div key={submission.id} className="flex justify-between gap-2">
+                    <span>{submission.status.replace(/_/g, " ")}</span>
+                    <span className="text-muted-foreground">
+                      {submission.createdAt.toLocaleDateString("en", { dateStyle: "medium" })}
+                    </span>
+                  </div>
+                )) : <p className="text-muted-foreground">No submissions yet.</p>}
+              </div>
+            )}
           </Card>
-        </div>
+        </aside>
       </div>
     </div>
   );
