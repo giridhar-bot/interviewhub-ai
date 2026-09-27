@@ -37,7 +37,7 @@ export function HeroSection() {
 
           <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:mt-6 sm:text-lg md:text-xl">
             The all-in-one platform for interview prep — notes, coding practice,
-            AI mock interviews, resume review, roadmaps, and 50+ tech stacks.
+            AI mock interviews, resume review, roadmaps, and a growing technology library.
             Everything you need in one place.
           </p>
 

@@ -1,9 +1,12 @@
 "use client";
 
-import { stats } from "@/config/navigation";
 import { motion } from "framer-motion";
 
-export function StatsSection() {
+type StatsSectionProps = {
+  stats: Array<{ value: string; label: string }>;
+};
+
+export function StatsSection({ stats }: StatsSectionProps) {
   return (
     <section className="border-y bg-muted/30 py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

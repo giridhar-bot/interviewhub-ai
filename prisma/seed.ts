@@ -76,11 +76,21 @@ async function main() {
     { name: "Swift", slug: "swift", version: "5.10" },
     { name: "Kotlin", slug: "kotlin", version: "1.9" },
   ];
-  for (const lang of languages) {
+  for (const [index, lang] of languages.entries()) {
     await prisma.language.upsert({
       where: { slug: lang.slug },
       update: lang,
       create: lang,
+    });
+    await prisma.technology.upsert({
+      where: { slug: lang.slug },
+      update: { name: lang.name, order: index + 1, status: "ACTIVE" },
+      create: {
+        name: lang.name,
+        slug: lang.slug,
+        order: index + 1,
+        status: "ACTIVE",
+      },
     });
   }
   console.log(`   ✅ ${languages.length} languages seeded`);

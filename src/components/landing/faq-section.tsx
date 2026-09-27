@@ -12,12 +12,12 @@ const faqs = [
   {
     question: "Is InterviewHub AI really free?",
     answer:
-      "Yes! Our free tier includes notes for all 50+ topics, basic interview questions, roadmaps, community access, and 5 AI tutor questions per day. You can prepare for interviews without paying anything.",
+      "Yes! Our free tier includes notes for published topics, basic interview questions, roadmaps, community access, and 5 AI tutor questions per day. You can prepare for interviews without paying anything.",
   },
   {
     question: "What technologies do you cover?",
     answer:
-      "We cover 50+ tech stacks including Java, Spring Boot, React, Angular, Node.js, Python, AWS, Azure, Docker, Kubernetes, SAP, Salesforce, SQL, System Design, and many more. We add new topics every month.",
+      "Our library includes topics across data structures, web development, system design, databases, cloud, core computer science, behavioral interviews, and AI/ML. Available material depends on published content in the library.",
   },
   {
     question: "How does the AI Mock Interview work?",
