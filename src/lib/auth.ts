@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
@@ -14,8 +15,18 @@ const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+const globalForAuth = globalThis as typeof globalThis & {
+  __interviewHubAuthSecret?: string;
+};
+
+const developmentAuthSecret =
+  process.env.NODE_ENV === "development"
+    ? (globalForAuth.__interviewHubAuthSecret ??= randomBytes(32).toString("base64url"))
+    : undefined;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? developmentAuthSecret,
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
