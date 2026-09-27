@@ -44,6 +44,7 @@ export async function getUserLearningProgress(userId: string) {
     prisma.learningProgress.findMany({
       where: { userId },
       orderBy: { totalXP: "desc" },
+      include: { topic: { select: { id: true, name: true, slug: true } } },
     }),
     prisma.articleProgress.count({ where: { userId, completed: true } }),
     prisma.quizProgress.findMany({ where: { userId } }),
@@ -202,4 +203,72 @@ export async function getDashboardStats(userId: string) {
     weeklyGoal,
     recentActivity,
   };
+}
+
+export async function getUserRecommendations(userId: string, limit = 5) {
+  return prisma.learningRecommendation.findMany({
+    where: { userId, completed: false },
+    orderBy: [{ priority: "asc" }, { score: "desc" }, { createdAt: "desc" }],
+    take: limit,
+    include: { topic: { select: { name: true, slug: true } } },
+  });
+}
+
+export async function getUserActivityCalendar(userId: string, days = 365) {
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  since.setDate(since.getDate() - days + 1);
+
+  const [history, streak] = await Promise.all([
+    prisma.xPHistory.findMany({
+      where: { userId, createdAt: { gte: since } },
+      orderBy: { createdAt: "asc" },
+      select: { amount: true, source: true, createdAt: true },
+    }),
+    prisma.learningStreak.findFirst({
+      where: { userId },
+      orderBy: { longestStreak: "desc" },
+      select: { longestStreak: true },
+    }),
+  ]);
+
+  const byDate = new Map<string, { count: number; xp: number }>();
+  const byMonth = new Map<string, { count: number; xp: number; activeDates: Set<string> }>();
+
+  for (const entry of history) {
+    const date = entry.createdAt.toISOString().slice(0, 10);
+    const month = date.slice(0, 7);
+    const daySummary = byDate.get(date) ?? { count: 0, xp: 0 };
+    daySummary.count += 1;
+    daySummary.xp += entry.amount;
+    byDate.set(date, daySummary);
+
+    const monthSummary = byMonth.get(month) ?? { count: 0, xp: 0, activeDates: new Set<string>() };
+    monthSummary.count += 1;
+    monthSummary.xp += entry.amount;
+    monthSummary.activeDates.add(date);
+    byMonth.set(month, monthSummary);
+  }
+
+  return {
+    entries: Array.from(byDate, ([date, summary]) => ({ date, ...summary })),
+    months: Array.from(byMonth, ([month, summary]) => ({
+      month,
+      count: summary.count,
+      xp: summary.xp,
+      activeDays: summary.activeDates.size,
+    })).sort((a, b) => b.month.localeCompare(a.month)),
+    totalEvents: history.length,
+    totalXP: history.reduce((sum, entry) => sum + entry.amount, 0),
+    activeDays: byDate.size,
+    averageEventsPerActiveDay: byDate.size ? history.length / byDate.size : 0,
+    longestStreak: streak?.longestStreak ?? 0,
+  };
+}
+
+export async function getUserAchievementProgress(userId: string) {
+  return prisma.achievementProgress.findMany({
+    where: { userId },
+    orderBy: [{ completed: "desc" }, { progress: "desc" }],
+  });
 }

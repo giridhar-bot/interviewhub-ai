@@ -1,6 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { generateSEO } from "@/lib/seo";
 import { breadcrumbJsonLd } from "@/lib/json-ld";
@@ -12,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const metadata = generateSEO({
   title: "Notes — Technical Interview Notes & Guides",
   description:
-    "Comprehensive interview notes with code examples, diagrams, and explanations. Covering Java, Spring Boot, React, AWS, System Design, and 50+ topics.",
+    "Browse published technical interview notes with code examples, diagrams, and explanations.",
   path: "/learn/notes",
   keywords: ["interview notes", "tech notes", "programming guides", "code examples"],
 });

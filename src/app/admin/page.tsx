@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { analyticsRepository } from "@/repositories/analytics.repository";
 import {
   UsersIcon,
   DocumentTextIcon,
@@ -24,46 +25,44 @@ const adminModules = [
     description: "Manage articles, questions, topics, roadmaps, and cheat sheets",
     icon: DocumentTextIcon,
     href: "/admin/content",
-    count: "2,450 items",
   },
   {
     title: "User Management",
     description: "View and manage user accounts, roles, and subscriptions",
     icon: UsersIcon,
     href: "/admin/users",
-    count: "12,340 users",
   },
   {
     title: "Analytics",
     description: "Traffic, engagement, conversion rates, and revenue metrics",
     icon: ChartBarIcon,
     href: "/admin/analytics",
-    count: "Real-time",
   },
   {
     title: "SEO Management",
     description: "Manage meta tags, sitemaps, structured data, and search rankings",
     icon: MagnifyingGlassIcon,
     href: "/admin/seo",
-    count: "1,200 pages",
   },
   {
     title: "Moderation",
     description: "Review reported content, comments, and user submissions",
     icon: ShieldCheckIcon,
     href: "/admin/moderation",
-    count: "5 pending",
   },
   {
     title: "Settings",
     description: "Platform configuration, feature flags, and integrations",
     icon: CogIcon,
     href: "/admin/settings",
-    count: "",
   },
 ];
 
-export default function AdminPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminPage() {
+  const stats = await analyticsRepository.getDashboardStats();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
@@ -81,10 +80,10 @@ export default function AdminPage() {
       {/* Quick Stats */}
       <div className="grid gap-4 sm:grid-cols-4">
         {[
-          { label: "Total Users", value: "12,340", change: "+12%" },
-          { label: "Active Today", value: "1,245", change: "+5%" },
-          { label: "Premium Users", value: "890", change: "+18%" },
-          { label: "Revenue (MTD)", value: "₹4.4L", change: "+22%" },
+          { label: "Total Users", value: stats.users },
+          { label: "Published Articles", value: stats.articles },
+          { label: "Published Problems", value: stats.problems },
+          { label: "Published Posts", value: stats.posts },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardHeader className="pb-3">
@@ -92,10 +91,7 @@ export default function AdminPage() {
                 {stat.label}
               </CardDescription>
               <div className="flex items-baseline gap-2">
-                <CardTitle className="text-2xl">{stat.value}</CardTitle>
-                <span className="text-xs font-medium text-green-600">
-                  {stat.change}
-                </span>
+                <CardTitle className="text-2xl">{stat.value.toLocaleString()}</CardTitle>
               </div>
             </CardHeader>
           </Card>
@@ -112,11 +108,6 @@ export default function AdminPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                     <mod.icon className="h-5 w-5 text-primary" />
                   </div>
-                  {mod.count && (
-                    <Badge variant="secondary" className="text-xs">
-                      {mod.count}
-                    </Badge>
-                  )}
                 </div>
                 <CardTitle className="mt-3 text-base group-hover:text-primary">
                   {mod.title}

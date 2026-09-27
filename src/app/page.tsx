@@ -4,7 +4,6 @@ import { SearchSection } from "@/components/landing/search-section";
 import { StatsSection } from "@/components/landing/stats-section";
 import { FeaturesSection } from "@/components/landing/features-section";
 import { TopicsSection } from "@/components/landing/topics-section";
-import { TestimonialsSection } from "@/components/landing/testimonials-section";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { FAQSection } from "@/components/landing/faq-section";
 import { CTASection } from "@/components/landing/cta-section";
@@ -59,13 +58,12 @@ export default async function Home() {
 
   return (
     <>
-      <HeroSection />
+      <HeroSection topics={topics} totalTopics={topicCount} />
       <TrustedBySection companies={companies} />
       <SearchSection trendingTopics={topics.slice(0, 10)} />
       <StatsSection stats={stats} />
       <FeaturesSection />
       <TopicsSection categories={categories} />
-      <TestimonialsSection />
       <PricingSection />
       <FAQSection />
       <CTASection />

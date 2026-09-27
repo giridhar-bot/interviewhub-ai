@@ -32,7 +32,7 @@ export const communityRepository = {
 
   async findPostBySlug(slug: string) {
     return prisma.post.findUnique({
-      where: { slug, deletedAt: null },
+      where: { slug, status: "PUBLISHED", deletedAt: null },
       include: {
         author: { select: { id: true, displayName: true, avatar: true, username: true } },
         comments: {

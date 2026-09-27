@@ -4,57 +4,45 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { generateSEO } from "@/lib/seo";
 import { breadcrumbJsonLd } from "@/lib/json-ld";
+import { questionRepository } from "@/repositories/question.repository";
 
 export const metadata = generateSEO({
-  title: "Behavioral Interview Prep — STAR Method & Practice Questions",
-  description:
-    "Master behavioral interviews with the STAR framework. Practice with 200+ questions, build your story bank, and ace behavioral rounds at top companies.",
+  title: "Behavioral Interview Prep — STAR Method & Questions",
+  description: "Review published behavioral interview questions and answer frameworks.",
   path: "/interview/behavioral",
-  keywords: ["behavioral interview", "STAR method", "interview questions", "leadership principles"],
+  keywords: ["behavioral interview", "STAR method", "interview questions"],
 });
 
-const categories = [
-  { name: "Leadership", count: 25, icon: "👑", slug: "leadership" },
-  { name: "Conflict Resolution", count: 20, icon: "🤝", slug: "conflict-resolution" },
-  { name: "Failure & Learning", count: 18, icon: "📈", slug: "failure-learning" },
-  { name: "Teamwork", count: 22, icon: "🏆", slug: "teamwork" },
-  { name: "Time Management", count: 15, icon: "⏰", slug: "time-management" },
-  { name: "Pressure Handling", count: 12, icon: "💪", slug: "pressure-handling" },
-  { name: "Innovation", count: 16, icon: "💡", slug: "innovation" },
-  { name: "Customer Focus", count: 14, icon: "🎯", slug: "customer-focus" },
-];
+export const dynamic = "force-dynamic";
 
 const frameworks = [
   {
     name: "STAR Method",
     steps: ["Situation", "Task", "Action", "Result"],
-    description: "The most widely used framework. Structure your answer with context, task, action, and quantified result.",
+    description: "Structure your answer with context, task, action, and outcome.",
     color: "from-violet-500 to-indigo-500",
   },
   {
     name: "CAR Method",
     steps: ["Challenge", "Action", "Result"],
-    description: "A shorter alternative that focuses on the challenge you faced and how you overcame it.",
+    description: "Focus on the challenge you faced and how you addressed it.",
     color: "from-blue-500 to-cyan-500",
   },
   {
     name: "SOAR Method",
     steps: ["Situation", "Obstacle", "Action", "Result"],
-    description: "Emphasizes the obstacles you overcame, showing resilience and problem-solving.",
+    description: "Describe the obstacle and the actions and outcome that followed.",
     color: "from-green-500 to-emerald-500",
   },
 ];
 
-const topQuestions = [
-  "Tell me about a time you led a project that failed",
-  "Describe a situation where you disagreed with your manager",
-  "Give an example of when you had to meet a tight deadline",
-  "Tell me about a time you went above and beyond",
-  "Describe a conflict with a team member and how you resolved it",
-  "Tell me about your biggest professional achievement",
-];
+export default async function BehavioralInterviewPage() {
+  const { questions, total } = await questionRepository.findPublishedByType("BEHAVIORAL", 50);
+  const topicCounts = new Map<string, number>();
+  for (const question of questions) {
+    topicCounts.set(question.topic.name, (topicCounts.get(question.topic.name) ?? 0) + 1);
+  }
 
-export default function BehavioralInterviewPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <script
@@ -71,32 +59,25 @@ export default function BehavioralInterviewPage() {
       />
 
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Behavioral{" "}
-          <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-            Interview
-          </span>
-        </h1>
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Behavioral Interview</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Master behavioral interviews with proven frameworks. Build your story bank
-          and practice with AI mock interviews.
+          Review published questions and use structured frameworks to prepare your answers.
         </p>
       </div>
 
-      {/* Frameworks */}
-      <div className="mt-16">
+      <section className="mt-16">
         <h2 className="text-2xl font-bold">Answer Frameworks</h2>
         <div className="mt-6 grid gap-6 sm:grid-cols-3">
-          {frameworks.map((fw) => (
-            <Card key={fw.name} className="h-full">
+          {frameworks.map((framework) => (
+            <Card key={framework.name} className="h-full">
               <CardHeader>
-                <CardTitle className="text-lg">{fw.name}</CardTitle>
-                <CardDescription className="mt-2">{fw.description}</CardDescription>
+                <CardTitle className="text-lg">{framework.name}</CardTitle>
+                <CardDescription className="mt-2">{framework.description}</CardDescription>
                 <div className="mt-4 space-y-2">
-                  {fw.steps.map((step, i) => (
+                  {framework.steps.map((step, index) => (
                     <div key={step} className="flex items-center gap-3">
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r ${fw.color} text-xs text-white font-bold`}>
-                        {i + 1}
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r ${framework.color} text-xs font-bold text-white`}>
+                        {index + 1}
                       </div>
                       <span className="text-sm font-medium">{step}</span>
                     </div>
@@ -106,59 +87,51 @@ export default function BehavioralInterviewPage() {
             </Card>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Categories */}
-      <div className="mt-16">
-        <h2 className="text-2xl font-bold">Question Categories</h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {categories.map((cat) => (
-            <Card key={cat.slug} className="cursor-pointer transition-all hover:shadow-md hover:border-violet-200">
-              <CardHeader className="flex flex-row items-center gap-3 pb-4">
-                <span className="text-2xl">{cat.icon}</span>
-                <div>
-                  <CardTitle className="text-sm">{cat.name}</CardTitle>
-                  <CardDescription>{cat.count} questions</CardDescription>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </div>
+      {topicCounts.size > 0 && (
+        <section className="mt-16">
+          <h2 className="text-2xl font-bold">Question Topics</h2>
+          <div className="mt-6 flex flex-wrap gap-2">
+            {Array.from(topicCounts, ([name, count]) => (
+              <Link key={name} href={`/topics/${questions.find((question) => question.topic.name === name)?.topic.slug}`}>
+                <Badge variant="secondary">{name} · {count}</Badge>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Top Questions */}
-      <div className="mt-16">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Most Asked Questions</h2>
-          <Button variant="outline" className="rounded-full">View All</Button>
-        </div>
-        <div className="mt-6 space-y-3">
-          {topQuestions.map((q, i) => (
-            <Card key={i} className="cursor-pointer transition-all hover:shadow-md hover:border-violet-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-bold">
-                    {i + 1}
+      <section className="mt-16">
+        <h2 className="text-2xl font-bold">Published Behavioral Questions ({total})</h2>
+        {questions.length ? (
+          <div className="mt-6 space-y-3">
+            {questions.map((question) => (
+              <Card key={question.id}>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
+                  <div>
+                    <CardTitle className="text-sm font-medium">{question.title}</CardTitle>
+                    <CardDescription className="mt-1 line-clamp-2">{question.content}</CardDescription>
                   </div>
-                  <CardTitle className="text-sm font-medium">{q}</CardTitle>
-                </div>
-                <Badge variant="secondary">Practice</Badge>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </div>
+                  <Badge variant="outline">{question.difficulty}</Badge>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-6 rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+            No behavioral questions have been published yet.
+          </p>
+        )}
+      </section>
 
-      {/* CTA */}
-      <div className="mt-16 rounded-2xl bg-gradient-to-r from-violet-50 to-indigo-50 p-8 text-center dark:from-violet-950/20 dark:to-indigo-950/20">
+      <section className="mt-16 rounded-2xl bg-gradient-to-r from-violet-50 to-indigo-50 p-8 text-center dark:from-violet-950/20 dark:to-indigo-950/20">
         <h2 className="text-2xl font-bold">Practice with AI Mock Interview</h2>
-        <p className="mt-2 text-muted-foreground">
-          Get real-time feedback on your behavioral answers with our AI interviewer.
-        </p>
-        <Link href="/interview">
+        <p className="mt-2 text-muted-foreground">Get feedback on your behavioral answers.</p>
+        <Link href="/ai-tools/mock-interview">
           <Button size="lg" className="mt-4">Start Mock Interview</Button>
         </Link>
-      </div>
+      </section>
     </div>
   );
 }

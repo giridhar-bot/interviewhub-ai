@@ -18,7 +18,7 @@ export function FeaturesSection() {
         >
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Everything You Need to{" "}
-            <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-emerald-700 to-green-500 bg-clip-text text-transparent">
               Crack Any Interview
             </span>
           </h2>
@@ -38,10 +38,10 @@ export function FeaturesSection() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Link href={feature.href}>
-                <Card className="group h-full cursor-pointer border-border/50 transition-all duration-300 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-500/5">
+                <Card className="group h-full cursor-pointer border-border/50 transition-all duration-300 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/5">
                   <CardHeader>
-                    <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-violet-100 to-indigo-100 transition-colors group-hover:from-violet-200 group-hover:to-indigo-200">
-                      <feature.icon className="h-5 w-5 text-violet-600" />
+                    <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-100 to-green-100 transition-colors group-hover:from-emerald-200 group-hover:to-green-200">
+                      <feature.icon className="h-5 w-5 text-emerald-700" />
                     </div>
                     <CardTitle className="text-lg">{feature.title}</CardTitle>
                     <CardDescription className="text-sm">

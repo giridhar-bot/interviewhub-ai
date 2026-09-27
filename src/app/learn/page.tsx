@@ -14,6 +14,7 @@ import {
   SparklesIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
+import { learningRepository } from "@/repositories/learning.repository";
 
 export const metadata = generateSEO({
   title: "Learn — Notes, Roadmaps, Flashcards & Quizzes",
@@ -39,7 +40,6 @@ const modules = [
     icon: BookOpenIcon,
     color: "text-blue-600",
     bgColor: "bg-blue-50 dark:bg-blue-950/30",
-    count: "500+",
   },
   {
     title: "Roadmaps",
@@ -48,7 +48,6 @@ const modules = [
     icon: MapIcon,
     color: "text-green-600",
     bgColor: "bg-green-50 dark:bg-green-950/30",
-    count: "20+",
   },
   {
     title: "Flashcards",
@@ -57,7 +56,6 @@ const modules = [
     icon: RectangleStackIcon,
     color: "text-purple-600",
     bgColor: "bg-purple-50 dark:bg-purple-950/30",
-    count: "1000+",
   },
   {
     title: "Quizzes",
@@ -66,7 +64,6 @@ const modules = [
     icon: AcademicCapIcon,
     color: "text-orange-600",
     bgColor: "bg-orange-50 dark:bg-orange-950/30",
-    count: "200+",
   },
   {
     title: "Cheat Sheets",
@@ -75,7 +72,6 @@ const modules = [
     icon: DocumentTextIcon,
     color: "text-red-600",
     bgColor: "bg-red-50 dark:bg-red-950/30",
-    count: "50+",
   },
   {
     title: "Leaderboard",
@@ -84,7 +80,6 @@ const modules = [
     icon: TrophyIcon,
     color: "text-yellow-600",
     bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
-    count: "Top 100",
   },
 ];
 
@@ -95,7 +90,19 @@ const features = [
   { icon: MapIcon, title: "Structured Paths", description: "Follow curated roadmaps from beginner to expert for every tech stack." },
 ];
 
-export default function LearnPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LearnPage() {
+  const counts = await learningRepository.getPublicContentCounts();
+  const moduleCounts: Record<string, number> = {
+    Notes: counts.articles,
+    Roadmaps: counts.roadmaps,
+    Flashcards: counts.flashcardDecks,
+    Quizzes: counts.quizzes,
+    "Cheat Sheets": counts.cheatSheets,
+    Leaderboard: counts.leaderboardUsers,
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <script
@@ -132,7 +139,7 @@ export default function LearnPage() {
                   <div className={`rounded-lg p-3 ${mod.bgColor}`}>
                     <mod.icon className={`h-6 w-6 ${mod.color}`} />
                   </div>
-                  <Badge variant="secondary">{mod.count}</Badge>
+                  <Badge variant="secondary">{moduleCounts[mod.title].toLocaleString()}</Badge>
                 </div>
                 <CardTitle className="mt-4 group-hover:text-primary transition-colors">
                   {mod.title}

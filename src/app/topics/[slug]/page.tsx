@@ -1,52 +1,32 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { breadcrumbJsonLd, courseJsonLd } from "@/lib/json-ld";
+import { topicRepository } from "@/repositories/topic.repository";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
-import { breadcrumbJsonLd, courseJsonLd, faqPageJsonLd } from "@/lib/json-ld";
 
-const topicData: Record<
-  string,
-  { name: string; description: string; category: string }
-> = {
-  java: { name: "Java", description: "Core Java, Collections, Multithreading, JVM, OOP concepts and more", category: "Backend" },
-  "spring-boot": { name: "Spring Boot", description: "Spring Framework, REST APIs, Microservices, Security, JPA and more", category: "Backend" },
-  "node-js": { name: "Node.js", description: "Event loop, Express, async programming, streams and more", category: "Backend" },
-  "net": { name: ".NET", description: "C#, ASP.NET Core, Entity Framework, LINQ and more", category: "Backend" },
-  python: { name: "Python", description: "Data structures, Django, Flask, async, decorators and more", category: "Backend" },
-  go: { name: "Go", description: "Goroutines, channels, interfaces, concurrency patterns and more", category: "Backend" },
-  react: { name: "React", description: "Hooks, state management, performance, Next.js and more", category: "Frontend" },
-  angular: { name: "Angular", description: "Components, RxJS, NgRx, routing, forms and more", category: "Frontend" },
-  vue: { name: "Vue", description: "Composition API, Vuex, Pinia, Nuxt.js and more", category: "Frontend" },
-  javascript: { name: "JavaScript", description: "Closures, prototypes, event loop, ES6+, promises and more", category: "Frontend" },
-  typescript: { name: "TypeScript", description: "Types, generics, decorators, utility types and more", category: "Frontend" },
-  aws: { name: "AWS", description: "EC2, S3, Lambda, DynamoDB, CloudFormation and more", category: "Cloud & DevOps" },
-  azure: { name: "Azure", description: "App Services, Functions, CosmosDB, AKS and more", category: "Cloud & DevOps" },
-  gcp: { name: "GCP", description: "Compute Engine, Cloud Functions, BigQuery and more", category: "Cloud & DevOps" },
-  docker: { name: "Docker", description: "Containers, images, compose, networking and more", category: "Cloud & DevOps" },
-  kubernetes: { name: "Kubernetes", description: "Pods, services, deployments, Helm, operators and more", category: "Cloud & DevOps" },
-  terraform: { name: "Terraform", description: "IaC, providers, modules, state management and more", category: "Cloud & DevOps" },
-  sap: { name: "SAP", description: "ABAP, FICO, MM, SD, Basis, HANA and more", category: "Enterprise" },
-  salesforce: { name: "Salesforce", description: "Apex, Lightning, Flows, integrations and more", category: "Enterprise" },
-  servicenow: { name: "ServiceNow", description: "ITSM, scripting, workflows, integrations and more", category: "Enterprise" },
-  sql: { name: "SQL", description: "Joins, indexing, query optimization, stored procedures and more", category: "Data" },
-  "data-engineering": { name: "Data Engineering", description: "ETL, pipelines, Spark, Kafka and more", category: "Data" },
-  "power-bi": { name: "Power BI", description: "DAX, data modeling, visualizations and more", category: "Data" },
-  snowflake: { name: "Snowflake", description: "Warehousing, queries, time-travel and more", category: "Data" },
-  databricks: { name: "Databricks", description: "Spark, Delta Lake, MLflow and more", category: "Data" },
-};
+export const dynamic = "force-dynamic";
 
 type Params = Promise<{ slug: string }>;
 
+function contentPreview(content: string) {
+  const normalized = content.replace(/\s+/g, " ").trim();
+  return normalized.length > 220 ? `${normalized.slice(0, 220)}...` : normalized;
+}
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
-  const topic = topicData[slug];
+  const topic = await topicRepository.findPublishedBySlug(slug);
+
   if (!topic) return { title: "Topic Not Found" };
+
+  const description = topic.description ?? `Explore published learning content for ${topic.name}.`;
   return {
     title: `${topic.name} Interview Questions, Notes & Roadmap`,
-    description: `Prepare for ${topic.name} interviews with curated questions, notes, roadmaps and cheat sheets. ${topic.description}`,
+    description: `Prepare for ${topic.name} interviews with published questions, notes, roadmaps and cheat sheets. ${description}`,
     keywords: [
       `${topic.name} interview questions`,
       `${topic.name} notes`,
@@ -56,7 +36,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     ],
     openGraph: {
       title: `${topic.name} Interview Questions, Notes & Roadmap`,
-      description: `Prepare for ${topic.name} interviews with curated questions, notes, roadmaps and cheat sheets.`,
+      description,
       url: `https://interviewhub.ai/topics/${slug}`,
       type: "website",
     },
@@ -66,68 +46,47 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-const tabContent = [
-  { value: "questions", label: "Interview Questions", count: "150+" },
-  { value: "notes", label: "Notes", count: "50+" },
-  { value: "roadmap", label: "Roadmap", count: "1" },
-  { value: "cheatsheet", label: "Cheat Sheet", count: "5+" },
-];
-
 export default async function TopicPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const topic = topicData[slug];
+  const topic = await topicRepository.findPublicPageBySlug(slug);
 
-  if (!topic) {
-    notFound();
-  }
+  if (!topic) notFound();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbJsonLd([
-            { name: "Home", href: "/" },
-            { name: "Topics", href: "/topics" },
-            { name: topic.name, href: `/topics/${slug}` },
-          ])),
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Home", href: "/" },
+              { name: "Topics", href: "/topics" },
+              { name: topic.name, href: `/topics/${slug}` },
+            ])
+          ),
         }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(courseJsonLd({
-            title: `${topic.name} Interview Preparation`,
-            description: topic.description,
-            slug,
-          })),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqPageJsonLd([
-            { question: `What are common ${topic.name} interview questions?`, answer: `Common ${topic.name} interview questions cover ${topic.description}. Practice with our curated question bank.` },
-            { question: `How to prepare for ${topic.name} interviews?`, answer: `Start with our ${topic.name} roadmap, study the notes, practice coding problems, and use cheat sheets for quick revision.` },
-          ])),
+          __html: JSON.stringify(
+            courseJsonLd({
+              title: `${topic.name} Interview Preparation`,
+              description: topic.description ?? `Published learning content for ${topic.name}.`,
+              slug,
+            })
+          ),
         }}
       />
 
-      {/* Breadcrumb */}
       <nav className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-foreground">
-          Home
-        </Link>
+        <Link href="/" className="hover:text-foreground">Home</Link>
         <span>/</span>
-        <Link href="/topics" className="hover:text-foreground">
-          Topics
-        </Link>
+        <Link href="/topics" className="hover:text-foreground">Topics</Link>
         <span>/</span>
         <span className="text-foreground">{topic.name}</span>
       </nav>
 
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
@@ -136,66 +95,115 @@ export default async function TopicPage({ params }: { params: Params }) {
             </h1>
             <Badge variant="secondary">{topic.category}</Badge>
           </div>
-          <p className="mt-2 text-lg text-muted-foreground">
-            {topic.description}
-          </p>
+          {topic.description && (
+            <p className="mt-2 text-lg text-muted-foreground">{topic.description}</p>
+          )}
         </div>
         <Button className="shrink-0 bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
           Start Learning
         </Button>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="questions" className="mt-12">
         <TabsList className="grid w-full grid-cols-4">
-          {tabContent.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
+          <TabsTrigger value="questions">Interview Questions ({topic._count.questions})</TabsTrigger>
+          <TabsTrigger value="notes">Notes ({topic._count.articles})</TabsTrigger>
+          <TabsTrigger value="roadmap">Roadmap ({topic._count.roadmaps})</TabsTrigger>
+          <TabsTrigger value="cheatsheet">Cheat Sheet ({topic._count.cheatSheets})</TabsTrigger>
         </TabsList>
 
-        {tabContent.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value} className="mt-8">
+        <TabsContent value="questions" className="mt-8">
+          {topic.questions.length ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Card
-                  key={i}
-                  className="cursor-pointer transition-all hover:shadow-md"
-                >
+              {topic.questions.map((question) => (
+                <Card key={question.id}>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <Badge
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        {["Easy", "Medium", "Hard"][i % 3]}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        #{i + 1}
-                      </span>
-                    </div>
-                    <CardTitle className="text-base mt-2">
-                      {tab.value === "questions"
-                        ? `${topic.name} ${tab.label.slice(0, -1)} ${i + 1}`
-                        : `${topic.name} ${tab.label} ${i + 1}`}
-                    </CardTitle>
-                    <CardDescription className="text-sm">
-                      Sample content for {topic.name} {tab.label.toLowerCase()}.
-                      This will be replaced with real content.
+                    <Badge variant="secondary" className="w-fit text-xs">
+                      {question.difficulty}
+                    </Badge>
+                    <CardTitle className="mt-2 text-base">{question.title}</CardTitle>
+                    <CardDescription className="line-clamp-3 text-sm">
+                      {contentPreview(question.content)}
                     </CardDescription>
                   </CardHeader>
                 </Card>
               ))}
             </div>
+          ) : (
+            <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+              No published interview questions for this topic yet.
+            </p>
+          )}
+        </TabsContent>
 
-            <div className="mt-8 text-center">
-              <Button variant="outline" className="rounded-full px-8">
-                View All {tab.count} {tab.label}
-              </Button>
+        <TabsContent value="notes" className="mt-8">
+          {topic.articles.length ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {topic.articles.map((article) => (
+                <Card key={article.id}>
+                  <CardHeader>
+                    <CardTitle className="text-base">{article.title}</CardTitle>
+                    <CardDescription className="line-clamp-3 text-sm">
+                      {article.excerpt ?? article.shortDescription ?? `${article.readTime} min read`}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
             </div>
-          </TabsContent>
-        ))}
+          ) : (
+            <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+              No published notes for this topic yet.
+            </p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="roadmap" className="mt-8">
+          {topic.roadmaps.length ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {topic.roadmaps.map((roadmap) => (
+                <Link key={roadmap.id} href={`/learn/roadmaps/${roadmap.slug}`}>
+                  <Card className="h-full transition-all hover:shadow-md">
+                    <CardHeader>
+                      <CardTitle className="text-base">{roadmap.title}</CardTitle>
+                      {roadmap.description && (
+                        <CardDescription className="line-clamp-3 text-sm">
+                          {roadmap.description}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+              No published roadmap for this topic yet.
+            </p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="cheatsheet" className="mt-8">
+          {topic.cheatSheets.length ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {topic.cheatSheets.map((cheatSheet) => (
+                <Link key={cheatSheet.id} href={`/learn/cheat-sheets/${cheatSheet.slug}`}>
+                  <Card className="h-full transition-all hover:shadow-md">
+                    <CardHeader>
+                      <CardTitle className="text-base">{cheatSheet.title}</CardTitle>
+                      <CardDescription className="line-clamp-3 text-sm">
+                        {contentPreview(cheatSheet.content)}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+              No published cheat sheet for this topic yet.
+            </p>
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   );

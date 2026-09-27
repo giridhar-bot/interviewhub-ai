@@ -84,7 +84,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user }) {
       if (!user.email) return false;
 
       // Check if user is banned or deleted

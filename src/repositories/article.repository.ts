@@ -9,6 +9,31 @@ import type { ContentStatus } from "@/generated/prisma/client";
 const CACHE_TTL = 300; // 5 min
 
 export const articleRepository = {
+  async findPublishedBySlug(slug: string) {
+    return prisma.article.findUnique({
+      where: { slug, status: "PUBLISHED", deletedAt: null },
+      include: {
+        topic: { select: { name: true, slug: true, category: true } },
+        author: { select: { displayName: true, avatar: true } },
+      },
+    });
+  },
+
+  async findPublishedByTopicCategory(category: string, limit = 50) {
+    return prisma.article.findMany({
+      where: {
+        status: "PUBLISHED",
+        deletedAt: null,
+        topic: { category, status: "PUBLISHED", deletedAt: null },
+      },
+      orderBy: { publishedAt: "desc" },
+      take: limit,
+      include: {
+        topic: { select: { name: true, slug: true } },
+      },
+    });
+  },
+
   async findBySlug(slug: string) {
     const cacheKey = `articles:slug:${slug}`;
     const cached = await getCache(cacheKey);
@@ -88,7 +113,7 @@ export const articleRepository = {
     });
   },
 
-  async softDelete(id: string, deletedBy?: string) {
+  async softDelete(id: string) {
     await prisma.article.update({
       where: { id },
       data: { deletedAt: new Date() },

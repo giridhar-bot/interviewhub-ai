@@ -32,7 +32,7 @@ export function SearchSection({ trendingTopics }: { trendingTopics: TrendingTopi
             <Input
               type="search"
               placeholder="Search topics, questions, roadmaps..."
-              className="h-12 rounded-2xl pl-12 pr-4 text-sm shadow-lg border-border/50 focus:border-primary sm:h-14 sm:text-base"
+              className="h-12 rounded-2xl border-border/50 pl-12 pr-4 text-sm shadow-lg focus:border-emerald-500 sm:h-14 sm:text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -48,7 +48,7 @@ export function SearchSection({ trendingTopics }: { trendingTopics: TrendingTopi
               >
                 <Badge
                   variant="secondary"
-                  className="cursor-pointer text-xs transition-colors hover:bg-primary/10 hover:text-primary"
+                  className="cursor-pointer text-xs transition-colors hover:bg-emerald-50 hover:text-emerald-800"
                 >
                   {topic.name}
                 </Badge>

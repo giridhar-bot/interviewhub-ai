@@ -58,7 +58,7 @@ export function FAQSection() {
         >
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Frequently Asked{" "}
-            <span className="text-gradient">Questions</span>
+            <span className="bg-gradient-to-r from-emerald-700 to-green-500 bg-clip-text text-transparent">Questions</span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
             Everything you need to know about InterviewHub AI

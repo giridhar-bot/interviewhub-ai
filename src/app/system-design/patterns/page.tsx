@@ -3,63 +3,29 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { generateSEO } from "@/lib/seo";
 import { breadcrumbJsonLd } from "@/lib/json-ld";
+import { articleRepository } from "@/repositories/article.repository";
 
 export const metadata = generateSEO({
-  title: "Design Patterns — GoF & Software Architecture Patterns",
-  description:
-    "Learn Gang of Four design patterns, architectural patterns, and software engineering best practices. Creational, structural, and behavioral patterns with examples.",
+  title: "System Design Patterns & Topics",
+  description: "Browse tags on published system-design articles.",
   path: "/system-design/patterns",
-  keywords: ["design patterns", "GoF", "software architecture", "creational patterns", "behavioral patterns"],
+  keywords: ["design patterns", "software architecture", "system design"],
 });
 
-const patternCategories = [
-  {
-    category: "Creational",
-    color: "from-green-500 to-emerald-500",
-    patterns: [
-      { name: "Singleton", slug: "singleton", description: "Ensure a class has only one instance" },
-      { name: "Factory Method", slug: "factory-method", description: "Create objects without specifying the exact class" },
-      { name: "Abstract Factory", slug: "abstract-factory", description: "Create families of related objects" },
-      { name: "Builder", slug: "builder", description: "Construct complex objects step by step" },
-      { name: "Prototype", slug: "prototype", description: "Clone existing objects without coupling" },
-    ],
-  },
-  {
-    category: "Structural",
-    color: "from-blue-500 to-cyan-500",
-    patterns: [
-      { name: "Adapter", slug: "adapter", description: "Make incompatible interfaces work together" },
-      { name: "Decorator", slug: "decorator", description: "Add responsibilities dynamically" },
-      { name: "Facade", slug: "facade", description: "Simplified interface to a complex subsystem" },
-      { name: "Proxy", slug: "proxy", description: "Provide a placeholder for another object" },
-      { name: "Composite", slug: "composite", description: "Compose objects into tree structures" },
-    ],
-  },
-  {
-    category: "Behavioral",
-    color: "from-violet-500 to-purple-500",
-    patterns: [
-      { name: "Observer", slug: "observer", description: "Notify dependents of state changes" },
-      { name: "Strategy", slug: "strategy", description: "Define a family of algorithms" },
-      { name: "Command", slug: "command", description: "Encapsulate a request as an object" },
-      { name: "State", slug: "state", description: "Alter behavior when internal state changes" },
-      { name: "Template Method", slug: "template-method", description: "Define the skeleton of an algorithm" },
-    ],
-  },
-  {
-    category: "Architectural",
-    color: "from-orange-500 to-red-500",
-    patterns: [
-      { name: "MVC", slug: "mvc", description: "Model-View-Controller separation" },
-      { name: "Microservices", slug: "microservices", description: "Independent, deployable services" },
-      { name: "Event-Driven", slug: "event-driven", description: "Components communicate via events" },
-      { name: "CQRS", slug: "cqrs", description: "Separate read and write models" },
-      { name: "Repository", slug: "repository", description: "Abstract data access layer" },
-    ],
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function DesignPatternsPage() {
+export default async function DesignPatternsPage() {
+  const articles = await articleRepository.findPublishedByTopicCategory("System Design");
+  const tagArticles = new Map<string, typeof articles>();
+
+  for (const article of articles) {
+    for (const tag of article.tags) {
+      const matches = tagArticles.get(tag) ?? [];
+      matches.push(article);
+      tagArticles.set(tag, matches);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <script
@@ -76,40 +42,43 @@ export default function DesignPatternsPage() {
       />
 
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Design{" "}
-          <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-            Patterns
-          </span>
-        </h1>
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">System Design Topics</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Master the essential design patterns every software engineer should know.
-          From GoF classics to modern architectural patterns.
+          Tags and articles from the published System Design library.
         </p>
       </div>
 
-      <div className="mt-16 space-y-12">
-        {patternCategories.map((cat) => (
-          <div key={cat.category}>
-            <div className="flex items-center gap-3">
-              <div className={`h-1 w-12 rounded bg-gradient-to-r ${cat.color}`} />
-              <h2 className="text-2xl font-bold">{cat.category} Patterns</h2>
-            </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {cat.patterns.map((p) => (
-                <Link key={p.slug} href={`/system-design/${p.slug}`}>
-                  <Card className="h-full cursor-pointer transition-all hover:shadow-md hover:border-violet-200">
-                    <CardHeader>
-                      <CardTitle className="text-base">{p.name}</CardTitle>
-                      <CardDescription>{p.description}</CardDescription>
-                    </CardHeader>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {tagArticles.size ? (
+        <div className="mt-16 space-y-12">
+          {Array.from(tagArticles.entries()).map(([tag, taggedArticles]) => (
+            <section key={tag}>
+              <div className="flex items-center gap-3">
+                <div className="h-1 w-12 rounded bg-primary" />
+                <h2 className="text-2xl font-bold">{tag}</h2>
+                <Badge variant="secondary">{taggedArticles.length} articles</Badge>
+              </div>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {taggedArticles.map((article) => (
+                  <Link key={article.id} href={`/system-design/${article.slug}`}>
+                    <Card className="h-full transition-all hover:shadow-md">
+                      <CardHeader>
+                        <CardTitle className="text-base">{article.title}</CardTitle>
+                        <CardDescription className="line-clamp-3">
+                          {article.excerpt ?? article.shortDescription ?? `${article.readTime} min read`}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-12 rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+          No tagged system-design articles have been published yet.
+        </p>
+      )}
     </div>
   );
 }

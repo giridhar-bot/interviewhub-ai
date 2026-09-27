@@ -20,7 +20,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-600 to-green-700">
             <SparklesIcon className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold tracking-tight">
@@ -52,7 +52,7 @@ export function Header() {
           <Link href="/auth/register">
             <Button
               size="sm"
-              className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700"
+              className="bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700"
             >
               Get Started Free
             </Button>
@@ -76,7 +76,7 @@ export function Header() {
                 className="flex items-center gap-2"
                 onClick={() => setOpen(false)}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-600 to-green-700">
                   <SparklesIcon className="h-5 w-5 text-white" />
                 </div>
                 <span className="text-lg font-bold">{siteConfig.name}</span>
@@ -103,7 +103,7 @@ export function Header() {
                   </Button>
                 </Link>
                 <Link href="/auth/register" onClick={() => setOpen(false)}>
-                  <Button className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+                  <Button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white">
                     Get Started Free
                   </Button>
                 </Link>

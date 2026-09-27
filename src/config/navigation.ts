@@ -1,7 +1,5 @@
 import {
-  CodeBracketIcon,
   AcademicCapIcon,
-  CpuChipIcon,
   BuildingOffice2Icon,
   ChatBubbleLeftRightIcon,
   DocumentTextIcon,
@@ -9,11 +7,6 @@ import {
   RocketLaunchIcon,
   SparklesIcon,
   CommandLineIcon,
-  CircleStackIcon,
-  CloudIcon,
-  ServerStackIcon,
-  BeakerIcon,
-  PresentationChartBarIcon,
 } from "@heroicons/react/24/outline";
 
 export const mainNavItems = [
@@ -46,58 +39,6 @@ export const mainNavItems = [
     title: "Community",
     href: "/community",
     description: "Discussions & interview experiences",
-  },
-];
-
-export const topicCategories = [
-  {
-    title: "Backend",
-    icon: ServerStackIcon,
-    topics: ["Java", "Spring Boot", "Node.js", ".NET", "Python", "Go"],
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-  },
-  {
-    title: "Frontend",
-    icon: CodeBracketIcon,
-    topics: ["React", "Angular", "Vue", "JavaScript", "TypeScript"],
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
-  },
-  {
-    title: "Cloud & DevOps",
-    icon: CloudIcon,
-    topics: ["AWS", "Azure", "GCP", "Docker", "Kubernetes", "Terraform"],
-    color: "text-orange-600",
-    bgColor: "bg-orange-50",
-  },
-  {
-    title: "Enterprise",
-    icon: BuildingOffice2Icon,
-    topics: ["SAP", "Salesforce", "ServiceNow"],
-    color: "text-green-600",
-    bgColor: "bg-green-50",
-  },
-  {
-    title: "Data",
-    icon: CircleStackIcon,
-    topics: ["SQL", "Data Engineering", "Power BI", "Snowflake", "Databricks"],
-    color: "text-cyan-600",
-    bgColor: "bg-cyan-50",
-  },
-  {
-    title: "Testing",
-    icon: BeakerIcon,
-    topics: ["Manual QA", "Automation", "Selenium", "Cypress", "Playwright"],
-    color: "text-red-600",
-    bgColor: "bg-red-50",
-  },
-  {
-    title: "Architecture",
-    icon: PresentationChartBarIcon,
-    topics: ["HLD", "LLD", "Microservices", "System Design"],
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
   },
 ];
 
@@ -150,13 +91,6 @@ export const features = [
     icon: AcademicCapIcon,
     href: "/ai-tools/study-planner",
   },
-];
-
-export const stats = [
-  { value: "500+", label: "Interview Topics" },
-  { value: "10,000+", label: "Practice Questions" },
-  { value: "50+", label: "Tech Stacks" },
-  { value: "100K+", label: "Learners" },
 ];
 
 export const footerLinks = {

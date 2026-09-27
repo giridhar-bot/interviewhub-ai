@@ -2,6 +2,7 @@ import { requireAuth } from "@/lib/auth-guard";
 import { redirect } from "next/navigation";
 import { OnboardingForm } from "./onboarding-form";
 import type { Metadata } from "next";
+import { learningRepository } from "@/repositories/learning.repository";
 
 export const metadata: Metadata = {
   title: "Complete Your Profile",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 
 export default async function OnboardingPage() {
   const user = await requireAuth();
+  const techStacks = await learningRepository.getActiveTechnologyNames();
 
   // If profile is already complete, skip to dashboard
   if (user.profileComplete) {
@@ -24,7 +26,7 @@ export default async function OnboardingPage() {
           Let&apos;s set up your profile to personalize your experience.
         </p>
       </div>
-      <OnboardingForm userId={user.id} email={user.email} />
+      <OnboardingForm userId={user.id} email={user.email} techStacks={techStacks} />
     </div>
   );
 }

@@ -8,24 +8,24 @@ import { breadcrumbJsonLd } from "@/lib/json-ld";
 export const metadata = generateSEO({
   title: "Resume Templates — Professional, Modern & ATS-Friendly",
   description:
-    "Choose from 12+ professionally designed resume templates. All templates are ATS-optimized and customizable. Modern, classic, and minimal designs.",
+    "Browse the resume layout presets currently available in the builder.",
   path: "/resume/templates",
   keywords: ["resume templates", "ATS-friendly resume", "professional resume", "resume design"],
 });
 
 const templates = [
-  { name: "Modern Pro", slug: "modern-pro", category: "Modern", atsScore: 95, popular: true, description: "Clean, modern design with sidebar layout. Perfect for tech roles." },
-  { name: "Classic", slug: "classic", category: "Traditional", atsScore: 98, popular: true, description: "Traditional single-column layout. Highest ATS compatibility." },
-  { name: "Minimal", slug: "minimal", category: "Minimal", atsScore: 96, popular: false, description: "Simple and elegant. Lets your content shine without distractions." },
-  { name: "Creative", slug: "creative", category: "Creative", atsScore: 85, popular: false, description: "Bold design with color accents. Great for design and marketing roles." },
-  { name: "Executive", slug: "executive", category: "Traditional", atsScore: 94, popular: false, description: "Sophisticated layout for senior positions. Emphasis on achievements." },
-  { name: "Tech Stack", slug: "tech-stack", category: "Modern", atsScore: 92, popular: true, description: "Optimized for developers. Highlights technical skills and projects." },
-  { name: "Graduate", slug: "graduate", category: "Minimal", atsScore: 97, popular: false, description: "Perfect for fresh graduates. Emphasizes education and internships." },
-  { name: "Compact", slug: "compact", category: "Minimal", atsScore: 95, popular: false, description: "Fits more content in less space. Ideal for experienced professionals." },
-  { name: "Two Column", slug: "two-column", category: "Modern", atsScore: 90, popular: false, description: "Balanced two-column layout with skills sidebar. Great visual hierarchy." },
-  { name: "Academic", slug: "academic", category: "Traditional", atsScore: 96, popular: false, description: "Academic CV format with publications, research, and teaching sections." },
-  { name: "Startup", slug: "startup", category: "Creative", atsScore: 88, popular: false, description: "Dynamic layout for startup culture. Shows innovation and impact." },
-  { name: "FAANG Ready", slug: "faang-ready", category: "Modern", atsScore: 94, popular: true, description: "Optimized format used by FAANG employees. Impact-driven bullet points." },
+  { name: "Modern Pro", slug: "modern-pro", category: "Modern", description: "Clean layout with a sidebar." },
+  { name: "Classic", slug: "classic", category: "Traditional", description: "Traditional single-column layout." },
+  { name: "Minimal", slug: "minimal", category: "Minimal", description: "Simple layout that keeps focus on your content." },
+  { name: "Creative", slug: "creative", category: "Creative", description: "Layout with color accents." },
+  { name: "Executive", slug: "executive", category: "Traditional", description: "Layout emphasizing experience and achievements." },
+  { name: "Tech Stack", slug: "tech-stack", category: "Modern", description: "Layout for technical skills and projects." },
+  { name: "Graduate", slug: "graduate", category: "Minimal", description: "Layout emphasizing education and early experience." },
+  { name: "Compact", slug: "compact", category: "Minimal", description: "Compact layout for concise resumes." },
+  { name: "Two Column", slug: "two-column", category: "Modern", description: "Two-column layout with a skills sidebar." },
+  { name: "Academic", slug: "academic", category: "Traditional", description: "Academic CV layout for research and teaching." },
+  { name: "Startup", slug: "startup", category: "Creative", description: "Flexible layout for startup roles." },
+  { name: "FAANG Ready", slug: "faang-ready", category: "Modern", description: "Impact-focused layout for technical roles." },
 ];
 
 const categories = ["All", "Modern", "Traditional", "Minimal", "Creative"];
@@ -54,7 +54,7 @@ export default function ResumeTemplatesPage() {
           </span>
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Choose a template, customize it, and export. All templates are ATS-optimized.
+          Choose an available layout preset to start building your resume.
         </p>
       </div>
 
@@ -78,16 +78,10 @@ export default function ResumeTemplatesPage() {
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                 Template Preview
               </div>
-              {t.popular && (
-                <Badge className="absolute top-2 right-2 bg-violet-600">Popular</Badge>
-              )}
             </div>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">{t.name}</CardTitle>
-                <Badge variant="outline" className="text-xs">
-                  ATS: {t.atsScore}%
-                </Badge>
               </div>
               <CardDescription className="text-xs">{t.description}</CardDescription>
               <div className="mt-3 flex items-center justify-between">

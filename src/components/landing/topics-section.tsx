@@ -22,13 +22,13 @@ type TopicCategory = {
 
 const categoryStyles = {
   "DSA & Programming": { icon: CodeBracketIcon, color: "text-blue-600", bgColor: "bg-blue-50" },
-  "Web Development": { icon: ServerStackIcon, color: "text-purple-600", bgColor: "bg-purple-50" },
-  "System Design": { icon: PresentationChartBarIcon, color: "text-indigo-600", bgColor: "bg-indigo-50" },
+  "Web Development": { icon: ServerStackIcon, color: "text-teal-700", bgColor: "bg-teal-50" },
+  "System Design": { icon: PresentationChartBarIcon, color: "text-emerald-800", bgColor: "bg-emerald-50" },
   Databases: { icon: CircleStackIcon, color: "text-cyan-600", bgColor: "bg-cyan-50" },
   "DevOps & Cloud": { icon: CloudIcon, color: "text-orange-600", bgColor: "bg-orange-50" },
   "Core CS": { icon: CpuChipIcon, color: "text-green-600", bgColor: "bg-green-50" },
   Behavioral: { icon: ChatBubbleLeftRightIcon, color: "text-red-600", bgColor: "bg-red-50" },
-  "AI & ML": { icon: SparklesIcon, color: "text-violet-600", bgColor: "bg-violet-50" },
+  "AI & ML": { icon: SparklesIcon, color: "text-green-700", bgColor: "bg-green-50" },
 };
 
 const defaultCategoryStyle = {
@@ -84,7 +84,7 @@ export function TopicsSection({ categories }: { categories: TopicCategory[] }) {
                     <Link key={topic.slug} href={`/topics/${topic.slug}`}>
                       <Badge
                         variant="secondary"
-                        className="cursor-pointer transition-colors hover:bg-violet-100 hover:text-violet-700"
+                        className="cursor-pointer transition-colors hover:bg-emerald-100 hover:text-emerald-800"
                       >
                         {topic.name}
                       </Badge>

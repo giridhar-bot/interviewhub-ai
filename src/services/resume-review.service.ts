@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { aiGenerate } from "@/lib/ai";
+import { z } from "zod";
 
 // ═══════════════════════════════════════════════
 // AI RESUME REVIEW SERVICE
@@ -20,6 +21,22 @@ interface ResumeAnalysis {
   };
   improvements: string[];
 }
+
+const resumeAnalysisSchema = z.object({
+  atsScore: z.number().min(0).max(100),
+  categories: z.array(z.object({
+    category: z.string(),
+    score: z.number().min(0),
+    maxScore: z.number().positive(),
+    suggestions: z.array(z.string()),
+  })),
+  overallFeedback: z.string(),
+  keywordAnalysis: z.object({
+    matched: z.array(z.string()),
+    missing: z.array(z.string()),
+  }),
+  improvements: z.array(z.string()),
+});
 
 export async function analyzeResume(
   userId: string,
@@ -47,15 +64,19 @@ export async function analyzeResume(
   });
 
   // Parse AI response
-  let analysis: ResumeAnalysis;
+  const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Resume analysis returned no structured result");
+
+  let parsedAnalysis: unknown;
   try {
-    // Extract JSON from response (might be wrapped in markdown code block)
-    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
-    analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : getDefaultAnalysis();
+    parsedAnalysis = JSON.parse(jsonMatch[0]);
   } catch {
-    analysis = getDefaultAnalysis();
-    analysis.overallFeedback = result.text;
+    throw new Error("Resume analysis returned invalid structured data");
   }
+
+  const validation = resumeAnalysisSchema.safeParse(parsedAnalysis);
+  if (!validation.success) throw new Error("Resume analysis returned an invalid result");
+  const analysis: ResumeAnalysis = validation.data;
 
   // Save review
   const review = await prisma.resumeReview.create({
@@ -100,19 +121,4 @@ export async function getReview(userId: string, reviewId: string) {
     where: { id: reviewId, userId },
     include: { atsScores: true },
   });
-}
-
-function getDefaultAnalysis(): ResumeAnalysis {
-  return {
-    atsScore: 50,
-    categories: [
-      { category: "format", score: 50, maxScore: 100, suggestions: ["Could not parse resume fully"] },
-      { category: "keywords", score: 50, maxScore: 100, suggestions: [] },
-      { category: "experience", score: 50, maxScore: 100, suggestions: [] },
-      { category: "skills", score: 50, maxScore: 100, suggestions: [] },
-    ],
-    overallFeedback: "Analysis could not be completed fully. Please try again.",
-    keywordAnalysis: { matched: [], missing: [] },
-    improvements: [],
-  };
 }
