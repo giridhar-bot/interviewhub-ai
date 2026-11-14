@@ -6,6 +6,43 @@ import { prisma } from "@/lib/prisma";
 import type { RoleType } from "@/generated/prisma/client";
 
 export const userRepository = {
+  async create(data: { name: string; email: string; password: string }) {
+    return prisma.user.create({
+      data: { ...data, displayName: data.name },
+      select: {
+        id: true,
+        name: true,
+        displayName: true,
+        email: true,
+        image: true,
+        role: true,
+        plan: true,
+      },
+    });
+  },
+
+  async getSettings(id: string) {
+    return prisma.user.findUnique({
+      where: { id, deletedAt: null },
+      select: {
+        name: true,
+        displayName: true,
+        email: true,
+        bio: true,
+        timezone: true,
+        locale: true,
+      },
+    });
+  },
+
+  async updateSettings(id: string, data: { displayName: string; bio: string; timezone: string }) {
+    return prisma.user.update({
+      where: { id, deletedAt: null },
+      data: { ...data, name: data.displayName },
+      select: { id: true, displayName: true },
+    });
+  },
+
   async getProfileById(id: string) {
     return prisma.user.findUnique({
       where: { id, deletedAt: null },

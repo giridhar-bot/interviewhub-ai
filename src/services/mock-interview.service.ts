@@ -28,9 +28,7 @@ export async function createInterview(
   const contextMessage = options?.role
     ? `The candidate is interviewing for a ${options.role} position.`
     : "";
-  const topicMessage = options?.topicHint
-    ? `Focus on ${options.topicHint} related questions.`
-    : "";
+  const topicMessage = options?.topicHint ? `Focus on ${options.topicHint} related questions.` : "";
 
   const result = await aiGenerate({
     module: "mockInterview",
@@ -57,11 +55,7 @@ export async function createInterview(
   return { interview, firstQuestion: result.text };
 }
 
-export async function answerQuestion(
-  userId: string,
-  interviewId: string,
-  answer: string
-) {
+export async function answerQuestion(userId: string, interviewId: string, answer: string) {
   const interview = await prisma.mockInterview.findFirst({
     where: { id: interviewId, userId },
     include: {
@@ -70,6 +64,7 @@ export async function answerQuestion(
   });
 
   if (!interview) throw new Error("Interview not found");
+  if (interview.completedAt) throw new Error("Interview is already complete");
 
   const lastQuestion = interview.questions[interview.questions.length - 1];
   if (!lastQuestion) throw new Error("No question to answer");
@@ -96,7 +91,9 @@ export async function answerQuestion(
     messages,
     userId,
     additionalInstructions:
-      "Evaluate the answer (score 1-10, feedback), then ask the next question. If this is the 5th+ question, wrap up with a summary.",
+      interview.questions.length >= 8
+        ? "Evaluate this final answer and provide an overall interview summary with strengths and areas to improve. Do not ask another question."
+        : "Evaluate the answer (score 1-10, feedback), then ask exactly one next question. Do not wrap up the interview yet.",
     tier: "premium",
   });
 
@@ -118,6 +115,11 @@ export async function answerQuestion(
         order: questionNumber,
       },
     });
+  } else {
+    await prisma.mockInterview.update({
+      where: { id: interviewId },
+      data: { completedAt: new Date(), feedback: { summary: result.text } },
+    });
   }
 
   return { feedback: result.text, questionNumber, isComplete: questionNumber > 8 };
@@ -133,7 +135,10 @@ export async function completeInterview(userId: string, interviewId: string) {
 
   // Generate overall feedback
   const summary = interview.questions
-    .map((q, i) => `Q${i + 1}: ${q.question}\nAnswer: ${q.userAnswer || "No answer"}\nFeedback: ${q.feedback || ""}`)
+    .map(
+      (q, i) =>
+        `Q${i + 1}: ${q.question}\nAnswer: ${q.userAnswer || "No answer"}\nFeedback: ${q.feedback || ""}`
+    )
     .join("\n\n");
 
   const result = await aiGenerate({
@@ -207,11 +212,7 @@ export async function getUserInterviews(userId: string, limit = 20) {
 
 // ─── Stream interview for real-time ──────────
 
-export async function streamAnswer(
-  userId: string,
-  interviewId: string,
-  answer: string
-) {
+export async function streamAnswer(userId: string, interviewId: string, answer: string) {
   const interview = await prisma.mockInterview.findFirst({
     where: { id: interviewId, userId },
     include: { questions: { orderBy: { order: "asc" } } },

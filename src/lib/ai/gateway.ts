@@ -1,5 +1,12 @@
 import { generateText, streamText, type ModelMessage } from "ai";
-import { getModel, getModelByTier, calculateCost, type AIModel, type AIProvider, AI_MODELS } from "./providers";
+import {
+  getModel,
+  getModelByTier,
+  calculateCost,
+  type AIModel,
+  type AIProvider,
+  AI_MODELS,
+} from "./providers";
 import { buildPrompt, PROMPTS } from "./prompts";
 import { retrieveContext, compressContext } from "./rag";
 import { checkSafety, sanitizeOutput } from "./safety";
@@ -46,6 +53,7 @@ interface AIGatewayOptions {
   cacheTTL?: number;
   // Extra context
   additionalInstructions?: string;
+  onFinish?: (text: string) => Promise<void>;
 }
 
 interface AIGatewayResult {
@@ -68,7 +76,8 @@ export async function aiGenerate(options: AIGatewayOptions): Promise<AIGatewayRe
     const safetyResult = checkSafety(lastUserMessage.content);
     if (!safetyResult.safe) {
       return {
-        text: safetyResult.message || "I can't process that request. Please rephrase your question.",
+        text:
+          safetyResult.message || "I can't process that request. Please rephrase your question.",
         usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
         cost: 0,
         model: "safety-filter",
@@ -107,11 +116,13 @@ export async function aiGenerate(options: AIGatewayOptions): Promise<AIGatewayRe
   );
 
   // 5. Select model
-  const model = options.model && options.provider
-    ? getModel({ provider: options.provider, model: options.model })
-    : getModelByTier(options.tier || getDefaultTier(options.module));
+  const model =
+    options.model && options.provider
+      ? getModel({ provider: options.provider, model: options.model })
+      : getModelByTier(options.tier || getDefaultTier(options.module));
 
-  const modelName = options.model || AI_MODELS[options.tier || getDefaultTier(options.module)].model;
+  const modelName =
+    options.model || AI_MODELS[options.tier || getDefaultTier(options.module)].model;
 
   // 6. Generate
   try {
@@ -198,11 +209,13 @@ export async function aiStream(options: AIGatewayOptions) {
   );
 
   // 4. Select model
-  const model = options.model && options.provider
-    ? getModel({ provider: options.provider, model: options.model })
-    : getModelByTier(options.tier || getDefaultTier(options.module));
+  const model =
+    options.model && options.provider
+      ? getModel({ provider: options.provider, model: options.model })
+      : getModelByTier(options.tier || getDefaultTier(options.module));
 
-  const modelName = options.model || AI_MODELS[options.tier || getDefaultTier(options.module)].model;
+  const modelName =
+    options.model || AI_MODELS[options.tier || getDefaultTier(options.module)].model;
 
   // 5. Stream
   const result = streamText({
@@ -211,7 +224,7 @@ export async function aiStream(options: AIGatewayOptions) {
     messages: options.messages,
     maxOutputTokens: options.maxTokens || 2000,
     temperature: options.temperature ?? 0.7,
-    async onFinish({ usage }) {
+    async onFinish({ usage, text }) {
       // Track analytics after stream completes
       const inputTokens = usage?.inputTokens || 0;
       const outputTokens = usage?.outputTokens || 0;
@@ -225,6 +238,7 @@ export async function aiStream(options: AIGatewayOptions) {
         latencyMs: 0,
         cached: false,
       });
+      await options.onFinish?.(text);
     },
   });
 
@@ -235,20 +249,34 @@ export async function aiStream(options: AIGatewayOptions) {
 
 function getSystemPrompt(module: AIModule): string {
   switch (module) {
-    case "tutor": return PROMPTS.tutor.system;
-    case "doubtSolver": return PROMPTS.doubtSolver.system;
-    case "mockInterview": return PROMPTS.mockInterview.technical.system;
-    case "resumeATS": return PROMPTS.resumeATS.system;
-    case "codeReview": return PROMPTS.codeReview.system;
-    case "codeExplainer": return PROMPTS.codeExplainer.system;
-    case "roadmapGenerator": return PROMPTS.roadmapGenerator.system;
-    case "studyPlanner": return PROMPTS.studyPlanner.system;
-    case "flashcardGenerator": return PROMPTS.flashcardGenerator.system;
-    case "quizGenerator": return PROMPTS.quizGenerator.system;
-    case "systemDesignReviewer": return PROMPTS.systemDesignReviewer.system;
-    case "careerAdvisor": return PROMPTS.careerAdvisor.system;
-    case "salaryInsights": return PROMPTS.salaryInsights.system;
-    default: return PROMPTS.tutor.system;
+    case "tutor":
+      return PROMPTS.tutor.system;
+    case "doubtSolver":
+      return PROMPTS.doubtSolver.system;
+    case "mockInterview":
+      return PROMPTS.mockInterview.technical.system;
+    case "resumeATS":
+      return PROMPTS.resumeATS.system;
+    case "codeReview":
+      return PROMPTS.codeReview.system;
+    case "codeExplainer":
+      return PROMPTS.codeExplainer.system;
+    case "roadmapGenerator":
+      return PROMPTS.roadmapGenerator.system;
+    case "studyPlanner":
+      return PROMPTS.studyPlanner.system;
+    case "flashcardGenerator":
+      return PROMPTS.flashcardGenerator.system;
+    case "quizGenerator":
+      return PROMPTS.quizGenerator.system;
+    case "systemDesignReviewer":
+      return PROMPTS.systemDesignReviewer.system;
+    case "careerAdvisor":
+      return PROMPTS.careerAdvisor.system;
+    case "salaryInsights":
+      return PROMPTS.salaryInsights.system;
+    default:
+      return PROMPTS.tutor.system;
   }
 }
 

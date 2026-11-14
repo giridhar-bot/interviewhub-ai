@@ -102,6 +102,8 @@ export async function chatStream(
   userMessage: string,
   topicHint?: string
 ) {
+  const conversation = await getConversation(conversationId, userId);
+  if (!conversation) throw new Error("Conversation not found");
   // Save user message
   await prisma.aIMessage.create({
     data: { conversationId, role: "user", content: userMessage },
@@ -110,11 +112,11 @@ export async function chatStream(
   // Get history
   const history = await prisma.aIMessage.findMany({
     where: { conversationId },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
     take: 20,
   });
 
-  const messages: ModelMessage[] = history.map((m) => ({
+  const messages: ModelMessage[] = history.reverse().map((m) => ({
     role: m.role as "user" | "assistant",
     content: m.content,
   }));
@@ -127,6 +129,16 @@ export async function chatStream(
     useRAG: true,
     ragTopicHint: topicHint,
     ragEntityTypes: ["article", "topic", "question"],
+    async onFinish(text) {
+      await saveStreamedResponse(conversationId, text);
+      await prisma.aITutorConversation.update({
+        where: { id: conversationId },
+        data: {
+          ...(conversation.title ? {} : { title: userMessage.slice(0, 100) }),
+          updatedAt: new Date(),
+        },
+      });
+    },
   });
 }
 

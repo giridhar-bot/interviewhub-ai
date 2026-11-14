@@ -23,7 +23,11 @@ type TopicCategory = {
 const categoryStyles = {
   "DSA & Programming": { icon: CodeBracketIcon, color: "text-blue-600", bgColor: "bg-blue-50" },
   "Web Development": { icon: ServerStackIcon, color: "text-teal-700", bgColor: "bg-teal-50" },
-  "System Design": { icon: PresentationChartBarIcon, color: "text-emerald-800", bgColor: "bg-emerald-50" },
+  "System Design": {
+    icon: PresentationChartBarIcon,
+    color: "text-emerald-800",
+    bgColor: "bg-emerald-50",
+  },
   Databases: { icon: CircleStackIcon, color: "text-cyan-600", bgColor: "bg-cyan-50" },
   "DevOps & Cloud": { icon: CloudIcon, color: "text-orange-600", bgColor: "bg-orange-50" },
   "Core CS": { icon: CpuChipIcon, color: "text-green-600", bgColor: "bg-green-50" },
@@ -52,14 +56,15 @@ export function TopicsSection({ categories }: { categories: TopicCategory[] }) {
             Explore Interview Topics
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Browse published topics across programming, web development, system
-            design, databases, and more.
+            Browse published topics across programming, web development, system design, databases,
+            and more.
           </p>
         </motion.div>
 
         <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {categories.map((category, index) => {
-            const style = categoryStyles[category.title as keyof typeof categoryStyles] ?? defaultCategoryStyle;
+            const style =
+              categoryStyles[category.title as keyof typeof categoryStyles] ?? defaultCategoryStyle;
             const CategoryIcon = style.icon;
 
             return (
@@ -69,11 +74,11 @@ export function TopicsSection({ categories }: { categories: TopicCategory[] }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.08 }}
-                className="group rounded-xl border bg-card p-6 transition-all duration-300 hover:shadow-lg"
+                className="group min-w-0 rounded-xl border bg-card p-6 transition-all duration-200 hover:shadow-lg"
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-lg ${style.bgColor}`}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${style.bgColor}`}
                   >
                     <CategoryIcon className={`h-5 w-5 ${style.color}`} />
                   </div>

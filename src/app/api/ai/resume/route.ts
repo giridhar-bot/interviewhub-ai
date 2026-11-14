@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const analyzeSchema = z.object({
   fileName: z.string().min(1),
-  fileUrl: z.string().url(),
+  fileUrl: z.union([z.string().url(), z.literal("")]),
   resumeText: z.string().min(50).max(50000),
   targetRole: z.string().optional(),
 });
@@ -18,10 +18,7 @@ export async function POST(request: NextRequest) {
   const plan = (user.plan as "FREE" | "PRO" | "ENTERPRISE") || "FREE";
   const limit = await checkUsageLimit(user.id, plan);
   if (!limit.allowed) {
-    return NextResponse.json(
-      { error: "Daily AI usage limit reached" },
-      { status: 429 }
-    );
+    return NextResponse.json({ error: "Daily AI usage limit reached" }, { status: 429 });
   }
 
   const body = await request.json();

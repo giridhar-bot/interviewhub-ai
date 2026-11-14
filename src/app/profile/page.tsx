@@ -35,7 +35,9 @@ export default async function ProfilePage() {
 
   const name = user.displayName ?? user.name ?? user.username ?? sessionUser.email;
   const today = new Date();
-  const endDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const endDate = new Date(
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+  );
   const firstDate = new Date(endDate);
   firstDate.setUTCDate(firstDate.getUTCDate() - 364);
   const activityByDate = new Map(activity.entries.map((entry) => [entry.date, entry.count]));
@@ -50,21 +52,22 @@ export default async function ProfilePage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       <Card>
-        <CardHeader className="flex flex-row items-center gap-6">
-          <Avatar className="h-20 w-20">
+        <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
+          <Avatar className="h-20 w-20 shrink-0">
             <AvatarImage src={user.avatar ?? user.image ?? undefined} alt={name} />
             <AvatarFallback className="bg-primary/10 text-2xl font-bold text-primary">
               {name.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-2xl">{name}</CardTitle>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <CardTitle className="break-words text-2xl">{name}</CardTitle>
               <Badge variant="secondary">{user.plan}</Badge>
             </div>
             {user.bio && <CardDescription className="mt-1">{user.bio}</CardDescription>}
             <CardDescription className="mt-1">
-              Member since {user.createdAt.toLocaleDateString("en", { month: "short", year: "numeric" })}
+              Member since{" "}
+              {user.createdAt.toLocaleDateString("en", { month: "short", year: "numeric" })}
             </CardDescription>
             <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span>{user.streak} day streak</span>
@@ -78,15 +81,38 @@ export default async function ProfilePage() {
       <Separator className="my-6" />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card><CardHeader className="text-center"><CardTitle className="text-3xl font-extrabold text-green-600">{coding.difficulty.easy}</CardTitle><CardDescription>Easy Solved</CardDescription></CardHeader></Card>
-        <Card><CardHeader className="text-center"><CardTitle className="text-3xl font-extrabold text-yellow-600">{coding.difficulty.medium}</CardTitle><CardDescription>Medium Solved</CardDescription></CardHeader></Card>
-        <Card><CardHeader className="text-center"><CardTitle className="text-3xl font-extrabold text-red-600">{coding.difficulty.hard}</CardTitle><CardDescription>Hard Solved</CardDescription></CardHeader></Card>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-extrabold text-green-600">
+              {coding.difficulty.easy}
+            </CardTitle>
+            <CardDescription>Easy Solved</CardDescription>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-extrabold text-yellow-600">
+              {coding.difficulty.medium}
+            </CardTitle>
+            <CardDescription>Medium Solved</CardDescription>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-extrabold text-red-600">
+              {coding.difficulty.hard}
+            </CardTitle>
+            <CardDescription>Hard Solved</CardDescription>
+          </CardHeader>
+        </Card>
       </div>
 
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="text-lg">Activity</CardTitle>
-          <CardDescription>{activity.totalEvents} XP events · {activity.activeDays} active days in the past year</CardDescription>
+          <CardDescription>
+            {activity.totalEvents} XP events · {activity.activeDays} active days in the past year
+          </CardDescription>
         </CardHeader>
         <div className="overflow-x-auto px-6 pb-6">
           {activity.totalEvents ? (

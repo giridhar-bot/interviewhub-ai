@@ -24,6 +24,7 @@ const plans = [
     cta: "Get Started Free",
     href: "/auth/register",
     popular: false,
+    available: true,
   },
   {
     name: "Pro",
@@ -40,9 +41,10 @@ const plans = [
       "Priority support",
       "Ad-free experience",
     ],
-    cta: "Start Pro Trial",
-    href: "/auth/register?plan=pro",
+    cta: "Not available yet",
+    href: "/auth/register",
     popular: true,
+    available: false,
   },
   {
     name: "Enterprise",
@@ -59,15 +61,16 @@ const plans = [
       "Custom content",
       "SSO integration",
     ],
-    cta: "Contact Sales",
-    href: "/contact",
+    cta: "Not available yet",
+    href: "/auth/register",
     popular: false,
+    available: false,
   },
 ];
 
 export function PricingSection() {
   return (
-    <section className="bg-muted/30 py-20 sm:py-28">
+    <section id="pricing" className="scroll-mt-20 bg-muted/30 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -77,14 +80,16 @@ export function PricingSection() {
         >
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Simple, Transparent{" "}
-            <span className="bg-gradient-to-r from-emerald-700 to-green-500 bg-clip-text text-transparent">Pricing</span>
+            <span className="bg-gradient-to-r from-emerald-700 to-green-500 bg-clip-text text-transparent">
+              Pricing
+            </span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Start free. Upgrade when you&apos;re ready to go premium.
+            Start free. Paid plans are planned; checkout and upgrades are not available yet.
           </p>
         </motion.div>
 
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-16 grid gap-8 md:grid-cols-3">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
@@ -96,7 +101,7 @@ export function PricingSection() {
               <Card
                 className={`relative h-full overflow-visible ${
                   plan.popular
-                    ? "border-emerald-300 shadow-xl shadow-emerald-500/15 mt-4 sm:mt-0"
+                    ? "border-emerald-300 shadow-xl shadow-emerald-500/15"
                     : "border-border/50"
                 }`}
               >
@@ -105,40 +110,38 @@ export function PricingSection() {
                     Most Popular
                   </Badge>
                 )}
-                <CardHeader className="space-y-4 pt-8 sm:space-y-6">
-                  <div>
+                <CardHeader className="gap-6 pt-8">
+                  <div className="md:min-h-24">
                     <CardTitle className="text-xl">{plan.name}</CardTitle>
-                    <CardDescription className="mt-1">
-                      {plan.description}
-                    </CardDescription>
+                    <CardDescription className="mt-1">{plan.description}</CardDescription>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-extrabold sm:text-4xl">{plan.price}</span>
-                    {plan.period && (
-                      <span className="text-muted-foreground">
-                        {plan.period}
-                      </span>
-                    )}
+                    {plan.period && <span className="text-muted-foreground">{plan.period}</span>}
                   </div>
-                  <Link href={plan.href} className="block">
-                    <Button
-                      className={`w-full h-11 ${
-                        plan.popular
-                          ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700"
-                          : ""
-                      }`}
-                      variant={plan.popular ? "default" : "outline"}
-                    >
+                  {plan.available ? (
+                    <Link href={plan.href} className="block">
+                      <Button
+                        className={`w-full h-11 ${
+                          plan.popular
+                            ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700"
+                            : ""
+                        }`}
+                        variant={plan.popular ? "default" : "outline"}
+                      >
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button disabled variant="outline" className="h-11 w-full">
                       {plan.cta}
                     </Button>
-                  </Link>
+                  )}
                   <ul className="space-y-3">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
                         <CheckIcon className="h-5 w-5 shrink-0 text-emerald-600" />
-                        <span className="text-sm text-muted-foreground">
-                          {feature}
-                        </span>
+                        <span className="text-sm text-muted-foreground">{feature}</span>
                       </li>
                     ))}
                   </ul>

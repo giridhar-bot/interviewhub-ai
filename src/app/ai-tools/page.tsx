@@ -14,7 +14,14 @@ export const metadata = generateSEO({
   description:
     "Use AI-powered tools for interview preparation — AI Tutor, Mock Interviews, Resume Review, ATS Score Checker, and personalized Study Planner.",
   path: "/ai-tools",
-  keywords: ["AI tutor", "mock interview", "resume review", "ATS checker", "study planner", "AI interview prep"],
+  keywords: [
+    "AI tutor",
+    "mock interview",
+    "resume review",
+    "ATS checker",
+    "study planner",
+    "AI interview prep",
+  ],
 });
 
 const tools = [
@@ -31,22 +38,32 @@ const tools = [
   {
     title: "AI Mock Interview",
     description:
-      "Practice with our AI interviewer that adapts to your experience level and target role. Get real-time feedback.",
+      "Practice eight AI-generated questions tailored to your target role and get feedback on each answer.",
     icon: ChatBubbleLeftRightIcon,
     href: "/ai-tools/mock-interview",
     badge: "Premium",
     color: "from-blue-500 to-cyan-500",
-    features: ["Role-specific questions", "Real-time feedback", "Performance score", "Improvement tips"],
+    features: [
+      "Role-specific questions",
+      "Answer feedback",
+      "Interview summary",
+      "Improvement tips",
+    ],
   },
   {
     title: "ATS Resume Review",
     description:
-      "Upload your resume and get instant ATS compatibility score, keyword analysis, and improvement suggestions.",
+      "Paste your resume text for an AI-estimated ATS score, keyword analysis, and improvement suggestions.",
     icon: DocumentTextIcon,
     href: "/ai-tools/resume-review",
     badge: "Premium",
     color: "from-green-500 to-emerald-500",
-    features: ["ATS score", "Keyword optimization", "Format check", "Industry benchmarks"],
+    features: [
+      "AI-estimated score",
+      "Keyword analysis",
+      "Content review",
+      "Improvement suggestions",
+    ],
   },
   {
     title: "AI Study Planner",
@@ -56,7 +73,7 @@ const tools = [
     href: "/ai-tools/study-planner",
     badge: "New",
     color: "from-orange-500 to-amber-500",
-    features: ["Personalized schedule", "Progress tracking", "Adaptive difficulty", "Reminders"],
+    features: ["Target role", "Daily study time", "Skill-based planning", "Saved study plan"],
   },
 ];
 
@@ -74,8 +91,8 @@ export default function AIToolsPage() {
           </span>
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Supercharge your interview preparation with AI-powered tools designed
-          to help you practice, learn, and improve faster.
+          Supercharge your interview preparation with AI-powered tools designed to help you
+          practice, learn, and improve faster.
         </p>
       </div>
 
@@ -90,10 +107,7 @@ export default function AIToolsPage() {
                   >
                     <tool.icon className="h-7 w-7 text-white" />
                   </div>
-                  <Badge
-                    variant="secondary"
-                    className="text-xs"
-                  >
+                  <Badge variant="secondary" className="text-xs">
                     {tool.badge}
                   </Badge>
                 </div>
@@ -101,17 +115,11 @@ export default function AIToolsPage() {
                   <CardTitle className="text-xl group-hover:text-violet-600">
                     {tool.title}
                   </CardTitle>
-                  <CardDescription className="mt-2 text-base">
-                    {tool.description}
-                  </CardDescription>
+                  <CardDescription className="mt-2 text-base">{tool.description}</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {tool.features.map((feature) => (
-                    <Badge
-                      key={feature}
-                      variant="outline"
-                      className="text-xs"
-                    >
+                    <Badge key={feature} variant="outline" className="text-xs">
                       {feature}
                     </Badge>
                   ))}

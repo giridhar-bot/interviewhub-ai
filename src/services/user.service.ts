@@ -1,27 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import type { RegisterInput } from "@/lib/validations";
+import { userRepository } from "@/repositories/user.repository";
 
 export async function createUser(input: RegisterInput) {
   const hashedPassword = await bcrypt.hash(input.password, 12);
 
-  return prisma.user.create({
-    data: {
-      name: input.name,
-      displayName: input.name,
-      email: input.email,
-      password: hashedPassword,
-    },
-    select: {
-      id: true,
-      name: true,
-      displayName: true,
-      email: true,
-      image: true,
-      role: true,
-      plan: true,
-    },
-  });
+  return userRepository.create({ name: input.name, email: input.email, password: hashedPassword });
 }
 
 export async function getUserById(id: string) {
@@ -42,9 +27,7 @@ export async function getUserById(id: string) {
 }
 
 export async function getUserByEmail(email: string) {
-  return prisma.user.findUnique({
-    where: { email },
-  });
+  return userRepository.findByEmail(email);
 }
 
 export async function updateUserStreak(userId: string) {
@@ -60,8 +43,7 @@ export async function updateUserStreak(userId: string) {
   let newStreak = user.streak;
 
   if (lastActive) {
-    const diffHours =
-      (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60);
+    const diffHours = (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60);
     if (diffHours >= 24 && diffHours < 48) {
       newStreak += 1;
     } else if (diffHours >= 48) {
