@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
   // Stream response
   const stream = await tutorService.chatStream(user.id, conversationId, message, topicHint);
-  return stream.toTextStreamResponse();
+  return stream.toTextStreamResponse({ headers: { "X-Conversation-Id": conversationId } });
 }
 
 // GET /api/ai/tutor — List conversations

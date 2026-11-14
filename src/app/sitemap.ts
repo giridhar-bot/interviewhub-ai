@@ -79,7 +79,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const articlePages: MetadataRoute.Sitemap = articles.map((article) => ({
-    url: `${siteConfig.url}/articles/${article.slug}`,
+    url: `${siteConfig.url}/learn/notes/${article.slug}`,
     lastModified: article.updatedAt,
     changeFrequency: "monthly" as const,
     priority: 0.7,
@@ -105,7 +105,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const roadmapPages: MetadataRoute.Sitemap = roadmaps.map((roadmap) => ({
-    url: `${siteConfig.url}/roadmaps/${roadmap.slug}`,
+    url: `${siteConfig.url}/learn/roadmaps/${roadmap.slug}`,
     lastModified: roadmap.updatedAt,
     changeFrequency: "monthly" as const,
     priority: 0.7,
@@ -118,7 +118,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const problemPages: MetadataRoute.Sitemap = problems.map((problem) => ({
-    url: `${siteConfig.url}/coding/${problem.slug}`,
+    url: `${siteConfig.url}/coding/problems/${problem.slug}`,
     lastModified: problem.updatedAt,
     changeFrequency: "monthly" as const,
     priority: 0.6,
@@ -131,7 +131,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const cheatSheetPages: MetadataRoute.Sitemap = cheatSheets.map((cs) => ({
-    url: `${siteConfig.url}/cheatsheets/${cs.slug}`,
+    url: `${siteConfig.url}/learn/cheat-sheets/${cs.slug}`,
     lastModified: cs.updatedAt,
     changeFrequency: "monthly" as const,
     priority: 0.6,

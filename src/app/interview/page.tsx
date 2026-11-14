@@ -15,7 +15,14 @@ export const metadata = generateSEO({
   description:
     "Prepare for technical, HR, and coding interviews with published questions, tips, AI mock interviews, and real interview experiences.",
   path: "/interview",
-  keywords: ["interview preparation", "technical interview", "HR interview", "coding interview", "mock interview", "interview questions"],
+  keywords: [
+    "interview preparation",
+    "technical interview",
+    "HR interview",
+    "coding interview",
+    "mock interview",
+    "interview questions",
+  ],
 });
 
 const interviewTypes = [
@@ -24,7 +31,7 @@ const interviewTypes = [
     description:
       "Deep-dive into data structures, algorithms, system design, and technology-specific questions.",
     icon: CodeBracketIcon,
-    href: "/interview/technical",
+    href: "/topics",
     badge: "Most Popular",
     color: "from-blue-500 to-cyan-500",
   },
@@ -39,8 +46,7 @@ const interviewTypes = [
   },
   {
     title: "Coding Round",
-    description:
-      "Practice coding problems with an online editor, test cases, and time tracking.",
+    description: "Practice coding problems with an online editor, test cases, and time tracking.",
     icon: AcademicCapIcon,
     href: "/coding",
     badge: "Practice",
@@ -72,8 +78,7 @@ export default async function InterviewPage() {
           </span>
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Everything you need to ace your next tech interview — from HR rounds
-          to system design.
+          Everything you need to ace your next tech interview — from HR rounds to system design.
         </p>
       </div>
 
@@ -96,9 +101,7 @@ export default async function InterviewPage() {
                 <CardTitle className="mt-4 text-xl group-hover:text-violet-600">
                   {type.title}
                 </CardTitle>
-                <CardDescription className="text-base">
-                  {type.description}
-                </CardDescription>
+                <CardDescription className="text-base">{type.description}</CardDescription>
               </CardHeader>
             </Card>
           </Link>
@@ -113,13 +116,10 @@ export default async function InterviewPage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           {popularTopics.map((topic) => (
-            <Link
-              key={topic.id}
-              href={`/topics/${topic.slug}`}
-            >
+            <Link key={topic.id} href={`/topics/${topic.slug}`} className="max-w-full">
               <Badge
                 variant="outline"
-                className="cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-violet-50 hover:border-violet-300 hover:text-violet-700"
+                className="h-auto max-w-full cursor-pointer whitespace-normal px-4 py-2 text-left text-sm transition-colors hover:bg-violet-50 hover:border-violet-300 hover:text-violet-700"
               >
                 {topic.name} Interview Questions
               </Badge>

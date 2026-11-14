@@ -89,6 +89,18 @@ src/
 
 ## Scripts
 
+### UI and account flow status
+
+- Responsive header navigation uses a scrollable mobile/tablet drawer below 1280px.
+- Email/password login and registration use validated, rate-limited Server Actions.
+- OAuth buttons appear only when the matching provider credentials are configured.
+- Settings load the signed-in user's profile; name, bio and timezone persist to the database.
+- AI tutor, mock interview, resume text review and study planner screens call the existing AI APIs. Tutor streams retain the conversation ID and save completed assistant responses.
+- Paid checkout is not implemented; paid-plan buttons are explicitly unavailable.
+- Remaining work includes resume-builder editing/export, community composer, study-group membership, notification preferences, account deletion/export, admin mutation controls and production service configuration. Legal text needs owner review before deployment.
+- Real OAuth, email delivery and AI generation require the matching credentials; do not treat mocked UI checks as provider integration verification.
+- Run the focused Redis-disabled throttling regression tests with `npx tsx --test tests/rate-limit.test.ts`.
+
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start development server |

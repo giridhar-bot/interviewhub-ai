@@ -28,13 +28,19 @@ export async function rateLimit(
   const now = Date.now();
   const resetAt = new Date(now + windowSeconds * 1000);
   const cacheKey = `ratelimit:${key}`;
+  const localEntry = memoryStore.get(cacheKey);
+  const localCount = localEntry && localEntry.resetAt > now ? localEntry.count + 1 : 1;
+  const localResetAt =
+    localEntry && localEntry.resetAt > now ? localEntry.resetAt : resetAt.getTime();
+  memoryStore.set(cacheKey, { count: localCount, resetAt: localResetAt });
 
   try {
     // Try Redis first
     const cached = await getCache<{ count: number; resetAt: number }>(cacheKey);
 
     if (cached && cached.resetAt > now) {
-      const newCount = cached.count + 1;
+      const newCount = Math.max(cached.count + 1, localCount);
+      memoryStore.set(cacheKey, { count: newCount, resetAt: cached.resetAt });
       await setCache(cacheKey, { count: newCount, resetAt: cached.resetAt }, windowSeconds);
       return {
         success: newCount <= limit,
@@ -45,24 +51,21 @@ export async function rateLimit(
     }
 
     // New window
-    await setCache(cacheKey, { count: 1, resetAt: resetAt.getTime() }, windowSeconds);
-    return { success: true, limit, remaining: limit - 1, resetAt };
+    await setCache(cacheKey, { count: localCount, resetAt: localResetAt }, windowSeconds);
+    return {
+      success: localCount <= limit,
+      limit,
+      remaining: Math.max(0, limit - localCount),
+      resetAt: new Date(localResetAt),
+    };
   } catch {
     // Fallback to in-memory
-    const entry = memoryStore.get(cacheKey);
-
-    if (entry && entry.resetAt > now) {
-      entry.count += 1;
-      return {
-        success: entry.count <= limit,
-        limit,
-        remaining: Math.max(0, limit - entry.count),
-        resetAt: new Date(entry.resetAt),
-      };
-    }
-
-    memoryStore.set(cacheKey, { count: 1, resetAt: resetAt.getTime() });
-    return { success: true, limit, remaining: limit - 1, resetAt };
+    return {
+      success: localCount <= limit,
+      limit,
+      remaining: Math.max(0, limit - localCount),
+      resetAt: new Date(localResetAt),
+    };
   }
 }
 
