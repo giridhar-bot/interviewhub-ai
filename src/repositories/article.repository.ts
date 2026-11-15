@@ -9,6 +9,29 @@ import type { ContentStatus } from "@/generated/prisma/client";
 const CACHE_TTL = 300; // 5 min
 
 export const articleRepository = {
+  async findPublishedLibrary(page = 1) {
+    const where = { status: "PUBLISHED" as const, deletedAt: null };
+    const [notes, total, topics] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
+        skip: (page - 1) * 30,
+        take: 30,
+        include: {
+          topic: { select: { name: true, slug: true } },
+          author: { select: { name: true } },
+        },
+      }),
+      prisma.article.count({ where }),
+      prisma.topic.findMany({
+        where: { status: "PUBLISHED", deletedAt: null },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, slug: true, _count: { select: { articles: { where } } } },
+      }),
+    ]);
+    return { notes, topics, totalPages: Math.max(1, Math.ceil(total / 30)) };
+  },
+
   async findPublishedBySlug(slug: string) {
     return prisma.article.findUnique({
       where: { slug, status: "PUBLISHED", deletedAt: null },
@@ -93,14 +116,17 @@ export const articleRepository = {
     return article;
   },
 
-  async update(id: string, data: Partial<{
-    title: string;
-    content: string;
-    excerpt: string;
-    tags: string[];
-    status: ContentStatus;
-    updatedBy: string;
-  }>) {
+  async update(
+    id: string,
+    data: Partial<{
+      title: string;
+      content: string;
+      excerpt: string;
+      tags: string[];
+      status: ContentStatus;
+      updatedBy: string;
+    }>
+  ) {
     const article = await prisma.article.update({ where: { id }, data });
     await invalidateCache(`articles:*`);
     return article;

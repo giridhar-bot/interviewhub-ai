@@ -9,6 +9,7 @@ import { getProblem, getProblems, getUserSubmissions } from "@/services/coding.s
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { compileMdxContent } from "@/lib/mdx";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -44,11 +45,14 @@ export default async function CodingProblemPage({ params }: Props) {
     getProblems({ category: problem.category, limit: 6 }),
     auth(),
   ]);
-  const relatedProblems = relatedResult.problems.filter((item) => item.slug !== problem.slug).slice(0, 4);
+  const relatedProblems = relatedResult.problems
+    .filter((item) => item.slug !== problem.slug)
+    .slice(0, 4);
   const submissions = session?.user?.id
     ? await getUserSubmissions(session.user.id, problem.id, 1, 10)
     : [];
   const constraints = problem.constraints?.split(/\r?\n/).filter(Boolean) ?? [];
+  const solution = problem.solution ? (await compileMdxContent(problem.solution)).content : null;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -74,7 +78,11 @@ export default async function CodingProblemPage({ params }: Props) {
           </div>
 
           <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
-            <span>Acceptance: {problem.acceptance.toFixed(1)}%</span>
+            <span>
+              {problem._count.submissions
+                ? `Acceptance: ${problem.acceptance.toFixed(1)}%`
+                : "No submissions yet"}
+            </span>
             <span>Submissions: {problem._count.submissions.toLocaleString()}</span>
           </div>
 
@@ -92,8 +100,14 @@ export default async function CodingProblemPage({ params }: Props) {
                     <CardHeader>
                       <CardTitle className="text-sm">Example {index + 1}</CardTitle>
                       <div className="mt-2 space-y-1 rounded-lg bg-muted/50 p-3 font-mono text-sm">
-                        <div><span className="text-muted-foreground">Input: </span>{testCase.input}</div>
-                        <div><span className="text-muted-foreground">Output: </span>{testCase.expected}</div>
+                        <div>
+                          <span className="text-muted-foreground">Input: </span>
+                          {testCase.input}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Output: </span>
+                          {testCase.expected}
+                        </div>
                       </div>
                     </CardHeader>
                   </Card>
@@ -110,16 +124,31 @@ export default async function CodingProblemPage({ params }: Props) {
             <section className="mt-8">
               <h2 className="text-xl font-bold">Constraints</h2>
               <ul className="mt-4 list-disc space-y-1 pl-6 font-mono text-sm">
-                {constraints.map((constraint) => <li key={constraint}>{constraint}</li>)}
+                {constraints.map((constraint) => (
+                  <li key={constraint}>{constraint}</li>
+                ))}
               </ul>
             </section>
+          )}
+
+          {solution && (
+            <details className="mt-8 rounded-xl border p-5">
+              <summary className="cursor-pointer text-lg font-semibold">
+                Solution and explanation
+              </summary>
+              <div className="mt-4 space-y-3 break-words text-sm leading-7 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-4 [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5">
+                {solution}
+              </div>
+            </details>
           )}
 
           <section className="mt-8">
             <Card>
               <CardHeader>
                 <CardTitle>Code Editor</CardTitle>
-                <CardDescription>Select your language and write your solution below.</CardDescription>
+                <CardDescription>
+                  Select your language and write your solution below.
+                </CardDescription>
               </CardHeader>
               <div className="border-t p-6">
                 <textarea
@@ -142,10 +171,20 @@ export default async function CodingProblemPage({ params }: Props) {
               <CardTitle className="text-sm">Problem Info</CardTitle>
             </CardHeader>
             <div className="space-y-3 px-6 pb-6 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Difficulty</span><span>{problem.difficulty}</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Difficulty</span>
+                <span>{problem.difficulty}</span>
+              </div>
               <Separator />
-              <div className="flex justify-between"><span className="text-muted-foreground">Category</span><span>{problem.category}</span></div>
-              {problem.tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Category</span>
+                <span>{problem.category}</span>
+              </div>
+              {problem.tags.map((tag) => (
+                <Badge key={tag} variant="outline">
+                  {tag}
+                </Badge>
+              ))}
               {problem.problemCompanies.length > 0 && (
                 <>
                   <Separator />
@@ -167,16 +206,20 @@ export default async function CodingProblemPage({ params }: Props) {
               <CardTitle className="text-sm">Related Problems</CardTitle>
             </CardHeader>
             <div className="space-y-2 px-6 pb-6">
-              {relatedProblems.length ? relatedProblems.map((related) => (
-                <Link
-                  key={related.slug}
-                  href={`/coding/problems/${related.slug}`}
-                  className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-muted/50"
-                >
-                  <span className="text-sm">{related.title}</span>
-                  <span className="text-xs text-muted-foreground">{related.difficulty}</span>
-                </Link>
-              )) : <p className="text-sm text-muted-foreground">No related problems yet.</p>}
+              {relatedProblems.length ? (
+                relatedProblems.map((related) => (
+                  <Link
+                    key={related.slug}
+                    href={`/coding/problems/${related.slug}`}
+                    className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-muted/50"
+                  >
+                    <span className="text-sm">{related.title}</span>
+                    <span className="text-xs text-muted-foreground">{related.difficulty}</span>
+                  </Link>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No related problems yet.</p>
+              )}
             </div>
           </Card>
 
@@ -184,19 +227,25 @@ export default async function CodingProblemPage({ params }: Props) {
             <CardHeader>
               <CardTitle className="text-sm">Your Submissions</CardTitle>
               <CardDescription>
-                {session?.user ? "Your recent attempts for this problem." : "Sign in to view your submission history."}
+                {session?.user
+                  ? "Your recent attempts for this problem."
+                  : "Sign in to view your submission history."}
               </CardDescription>
             </CardHeader>
             {session?.user && (
               <div className="space-y-2 px-6 pb-6 text-sm">
-                {submissions.length ? submissions.map((submission) => (
-                  <div key={submission.id} className="flex justify-between gap-2">
-                    <span>{submission.status.replace(/_/g, " ")}</span>
-                    <span className="text-muted-foreground">
-                      {submission.createdAt.toLocaleDateString("en", { dateStyle: "medium" })}
-                    </span>
-                  </div>
-                )) : <p className="text-muted-foreground">No submissions yet.</p>}
+                {submissions.length ? (
+                  submissions.map((submission) => (
+                    <div key={submission.id} className="flex justify-between gap-2">
+                      <span>{submission.status.replace(/_/g, " ")}</span>
+                      <span className="text-muted-foreground">
+                        {submission.createdAt.toLocaleDateString("en", { dateStyle: "medium" })}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No submissions yet.</p>
+                )}
               </div>
             )}
           </Card>

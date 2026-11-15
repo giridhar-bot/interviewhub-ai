@@ -33,11 +33,7 @@ function parseDifficulty(value?: string): Difficulty | undefined {
   return value === "EASY" || value === "MEDIUM" || value === "HARD" ? value : undefined;
 }
 
-export default async function CodingProblemsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function CodingProblemsPage({ searchParams }: { searchParams: SearchParams }) {
   const { difficulty: requestedDifficulty, category } = await searchParams;
   const difficulty = parseDifficulty(requestedDifficulty);
   const [categories, easy, medium, hard, problemResult] = await Promise.all([
@@ -70,7 +66,10 @@ export default async function CodingProblemsPage({
 
       <div className="mx-auto max-w-2xl text-center">
         <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Coding <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Problems</span>
+          Coding{" "}
+          <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+            Problems
+          </span>
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
           Published problems organized by category and difficulty.
@@ -97,7 +96,10 @@ export default async function CodingProblemsPage({
         {categories.length ? (
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {categories.map((item) => (
-              <Link key={item.name} href={`/coding/problems?category=${encodeURIComponent(item.name)}`}>
+              <Link
+                key={item.name}
+                href={`/coding/problems?category=${encodeURIComponent(item.name)}`}
+              >
                 <Card className="cursor-pointer transition-all hover:shadow-md hover:border-primary/40">
                   <CardHeader className="flex flex-row items-center justify-between pb-4">
                     <CardTitle className="text-sm font-medium">{item.name}</CardTitle>
@@ -119,32 +121,55 @@ export default async function CodingProblemsPage({
           <h2 className="text-2xl font-bold">
             {category ? `${category} Problems` : "Published Problems"}
           </h2>
-          {(category || difficulty) && <Link href="/coding/problems" className="text-sm text-primary">Clear filters</Link>}
+          {(category || difficulty) && (
+            <Link href="/coding/problems" className="text-sm text-primary">
+              Clear filters
+            </Link>
+          )}
         </div>
         {problemResult.problems.length ? (
-          <div className="mt-6 overflow-hidden rounded-xl border">
+          <div className="mt-6 overflow-x-auto rounded-xl border">
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Problem</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Category</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Difficulty</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Acceptance</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Problem
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Difficulty
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Acceptance
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {problemResult.problems.map((problem) => (
                   <tr key={problem.id} className="border-b last:border-0">
                     <td className="px-6 py-4 font-medium">
-                      <Link href={`/coding/problems/${problem.slug}`} className="hover:text-primary">{problem.title}</Link>
+                      <Link
+                        href={`/coding/problems/${problem.slug}`}
+                        className="hover:text-primary"
+                      >
+                        {problem.title}
+                      </Link>
                     </td>
-                    <td className="px-6 py-4"><Badge variant="outline">{problem.category}</Badge></td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${difficultyColors[problem.difficulty]}`}>
+                      <Badge variant="outline">{problem.category}</Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${difficultyColors[problem.difficulty]}`}
+                      >
                         {problem.difficulty}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">{problem.acceptance.toFixed(1)}%</td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
+                      {problem.acceptance.toFixed(1)}%
+                    </td>
                   </tr>
                 ))}
               </tbody>

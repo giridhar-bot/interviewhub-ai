@@ -4,7 +4,9 @@ import Link from "next/link";
 import { generateSEO } from "@/lib/seo";
 import { breadcrumbJsonLd } from "@/lib/json-ld";
 import { BookOpenIcon, ClockIcon, TagIcon } from "@heroicons/react/24/outline";
-import { prisma } from "@/lib/prisma";
+import { articleRepository } from "@/repositories/article.repository";
+import { z } from "zod";
+import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -16,39 +18,35 @@ export const metadata = generateSEO({
   keywords: ["interview notes", "tech notes", "programming guides", "code examples"],
 });
 
-async function getPublishedNotes() {
-  const [notes, topics] = await Promise.all([
-    prisma.article.findMany({
-      where: { status: "PUBLISHED", deletedAt: null },
-      orderBy: { publishedAt: "desc" },
-      take: 30,
-      include: {
-        topic: { select: { name: true, slug: true } },
-        author: { select: { name: true } },
-      },
-    }),
-    prisma.topic.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true, _count: { select: { articles: true } } },
-    }),
-  ]);
-  return { notes, topics };
-}
-
-export default async function NotesPage() {
-  const { notes, topics } = await getPublishedNotes();
+export default async function NotesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const query = await searchParams;
+  const parsedPage = z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(10000)
+    .safeParse(query.page ?? "1");
+  if (!parsedPage.success) notFound();
+  const page = parsedPage.data;
+  const { notes, topics, totalPages } = await articleRepository.findPublishedLibrary(page);
+  if (page > totalPages) notFound();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbJsonLd([
-            { name: "Home", href: "/" },
-            { name: "Learn", href: "/learn" },
-            { name: "Notes", href: "/learn/notes" },
-          ])),
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Home", href: "/" },
+              { name: "Learn", href: "/learn" },
+              { name: "Notes", href: "/learn/notes" },
+            ])
+          ),
         }}
       />
 
@@ -61,7 +59,9 @@ export default async function NotesPage() {
 
       {/* Topic Filter */}
       <div className="mb-8 flex flex-wrap gap-2">
-        <Badge variant="default" className="cursor-pointer">All</Badge>
+        <Badge variant="default" className="cursor-pointer">
+          All
+        </Badge>
         {topics.map((t) => (
           <Link key={t.id} href={`/topics/${t.slug}`}>
             <Badge variant="outline" className="cursor-pointer hover:bg-accent">
@@ -103,6 +103,36 @@ export default async function NotesPage() {
                         </span>
                       ))}
                     </div>
+                  )}
+                  {totalPages > 1 && (
+                    <nav
+                      aria-label="Note pages"
+                      className="mt-8 flex items-center justify-between gap-4 text-sm"
+                    >
+                      {page > 1 ? (
+                        <Link
+                          href={`/learn/notes?page=${page - 1}`}
+                          className="text-primary hover:underline"
+                        >
+                          Previous
+                        </Link>
+                      ) : (
+                        <span />
+                      )}
+                      <span>
+                        Page {page} of {totalPages}
+                      </span>
+                      {page < totalPages ? (
+                        <Link
+                          href={`/learn/notes?page=${page + 1}`}
+                          className="text-primary hover:underline"
+                        >
+                          Next
+                        </Link>
+                      ) : (
+                        <span />
+                      )}
+                    </nav>
                   )}
                 </CardHeader>
               </Card>

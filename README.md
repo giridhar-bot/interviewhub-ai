@@ -113,6 +113,29 @@ src/
 | `npm run db:migrate` | Run database migrations |
 | `npm run db:studio` | Open Prisma Studio |
 | `npm run db:seed` | Seed database |
+| `npm run db:seed:content` | Validate and preview original learning content without writing |
+
+## Publishing Learning Content
+
+The content seed adds original interview Q&A, notes, roadmaps, cheat sheets, flashcards, quizzes, tested coding exercises, hypothetical architecture case studies, and resume section outlines. Reference links are for further reading; third-party articles and solutions are not copied.
+
+```bash
+# Audit current published coverage
+npm run db:seed:content -- --inventory
+
+# Validate content and execute reference-solution fixtures; no writes
+npm run db:seed:content
+
+# Explicitly publish to the verified target host
+npm run db:seed:content -- --apply --expect-host <database-hostname>
+
+# Focused content and Markdown regression checks
+npx tsx --test tests/content-seed.test.ts
+```
+
+Configure `DATABASE_URL` privately before running the commands. The publisher refuses an unexpected host, uses create-only writes and transactional topic groups, preserves existing content and settings, and verifies persisted child records. Repeating the command must report zero newly created records. It does not seed users, submissions, scores, salaries, company interview claims, or community experiences.
+
+Topic pages paginate questions in groups of 50, expose their answers, link to full notes, and link to revision decks and quizzes. Coding reference solutions are readable independently of the unfinished interactive judge.
 
 ## CI/CD
 

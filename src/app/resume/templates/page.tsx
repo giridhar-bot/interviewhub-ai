@@ -4,33 +4,21 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { generateSEO } from "@/lib/seo";
 import { breadcrumbJsonLd } from "@/lib/json-ld";
+import { getResumeTemplateCatalog } from "@/services/resume-template.service";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = generateSEO({
   title: "Resume Templates — Professional, Modern & ATS-Friendly",
-  description:
-    "Browse the resume layout presets currently available in the builder.",
+  description: "Browse the resume layout presets currently available in the builder.",
   path: "/resume/templates",
   keywords: ["resume templates", "ATS-friendly resume", "professional resume", "resume design"],
 });
 
-const templates = [
-  { name: "Modern Pro", slug: "modern-pro", category: "Modern", description: "Clean layout with a sidebar." },
-  { name: "Classic", slug: "classic", category: "Traditional", description: "Traditional single-column layout." },
-  { name: "Minimal", slug: "minimal", category: "Minimal", description: "Simple layout that keeps focus on your content." },
-  { name: "Creative", slug: "creative", category: "Creative", description: "Layout with color accents." },
-  { name: "Executive", slug: "executive", category: "Traditional", description: "Layout emphasizing experience and achievements." },
-  { name: "Tech Stack", slug: "tech-stack", category: "Modern", description: "Layout for technical skills and projects." },
-  { name: "Graduate", slug: "graduate", category: "Minimal", description: "Layout emphasizing education and early experience." },
-  { name: "Compact", slug: "compact", category: "Minimal", description: "Compact layout for concise resumes." },
-  { name: "Two Column", slug: "two-column", category: "Modern", description: "Two-column layout with a skills sidebar." },
-  { name: "Academic", slug: "academic", category: "Traditional", description: "Academic CV layout for research and teaching." },
-  { name: "Startup", slug: "startup", category: "Creative", description: "Flexible layout for startup roles." },
-  { name: "FAANG Ready", slug: "faang-ready", category: "Modern", description: "Impact-focused layout for technical roles." },
-];
-
 const categories = ["All", "Modern", "Traditional", "Minimal", "Creative"];
 
-export default function ResumeTemplatesPage() {
+export default async function ResumeTemplatesPage() {
+  const templates = await getResumeTemplateCatalog();
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <script
@@ -73,10 +61,23 @@ export default function ResumeTemplatesPage() {
 
       <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {templates.map((t) => (
-          <Card key={t.slug} className="group cursor-pointer transition-all hover:shadow-lg hover:border-violet-200">
+          <Card
+            key={t.slug}
+            className="group cursor-pointer transition-all hover:shadow-lg hover:border-violet-200"
+          >
             <div className="relative h-48 overflow-hidden rounded-t-lg bg-gradient-to-br from-muted/50 to-muted">
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                Template Preview
+              <div
+                className="mx-auto flex h-full max-w-56 flex-col justify-center gap-2 p-4"
+                aria-label={`${t.name} section outline`}
+              >
+                {t.sections.slice(0, 5).map((section) => (
+                  <div
+                    key={section}
+                    className="border-b border-border/70 pb-1 text-xs font-medium text-muted-foreground"
+                  >
+                    {section}
+                  </div>
+                ))}
               </div>
             </div>
             <CardHeader>
@@ -85,13 +86,18 @@ export default function ResumeTemplatesPage() {
               </div>
               <CardDescription className="text-xs">{t.description}</CardDescription>
               <div className="mt-3 flex items-center justify-between">
-                <Badge variant="secondary" className="text-xs">{t.category}</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {t.category}
+                </Badge>
                 <Link href={`/resume/builder?template=${t.slug}`}>
-                  <Button size="sm" className="opacity-0 transition-opacity group-hover:opacity-100">
-                    Use Template
-                  </Button>
+                  <Button size="sm">Use Template</Button>
                 </Link>
               </div>
+              {!templates.length && (
+                <p className="mt-8 rounded-lg border border-dashed p-6 text-center text-muted-foreground">
+                  No resume template outlines have been published yet.
+                </p>
+              )}
             </CardHeader>
           </Card>
         ))}

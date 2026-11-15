@@ -45,7 +45,7 @@ export const topicRepository = {
     });
   },
 
-  async findPublicPageBySlug(slug: string) {
+  async findPublicPageBySlug(slug: string, questionPage = 1) {
     return prisma.topic.findUnique({
       where: { slug, status: "PUBLISHED", deletedAt: null },
       select: {
@@ -56,15 +56,30 @@ export const topicRepository = {
         category: true,
         questions: {
           where: { status: "PUBLISHED", deletedAt: null },
-          orderBy: { createdAt: "desc" },
-          take: 6,
-          select: { id: true, title: true, slug: true, content: true, difficulty: true },
+          orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+          skip: (questionPage - 1) * 50,
+          take: 50,
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            content: true,
+            answer: true,
+            difficulty: true,
+          },
         },
         articles: {
           where: { status: "PUBLISHED", deletedAt: null },
           orderBy: { publishedAt: "desc" },
           take: 6,
-          select: { id: true, title: true, slug: true, excerpt: true, shortDescription: true, readTime: true },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            excerpt: true,
+            shortDescription: true,
+            readTime: true,
+          },
         },
         roadmaps: {
           where: { status: "PUBLISHED", isPublished: true, deletedAt: null },
@@ -77,6 +92,16 @@ export const topicRepository = {
           orderBy: { updatedAt: "desc" },
           take: 6,
           select: { id: true, title: true, slug: true, content: true },
+        },
+        flashcardDecks: {
+          where: { status: "PUBLISHED" },
+          take: 6,
+          select: { id: true, title: true, slug: true, _count: { select: { flashcards: true } } },
+        },
+        quizzes: {
+          where: { status: "PUBLISHED", isPublished: true },
+          take: 6,
+          select: { id: true, title: true, slug: true, _count: { select: { questions: true } } },
         },
         _count: {
           select: {
@@ -140,7 +165,16 @@ export const topicRepository = {
     return topic;
   },
 
-  async update(id: string, data: Partial<{ name: string; description: string; icon: string; order: number; status: ContentStatus }>) {
+  async update(
+    id: string,
+    data: Partial<{
+      name: string;
+      description: string;
+      icon: string;
+      order: number;
+      status: ContentStatus;
+    }>
+  ) {
     const topic = await prisma.topic.update({ where: { id }, data });
     await invalidateCache("topics:*");
     return topic;

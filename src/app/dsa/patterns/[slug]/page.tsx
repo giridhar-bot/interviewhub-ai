@@ -13,7 +13,11 @@ type Props = { params: Promise<{ slug: string }> };
 export const dynamic = "force-dynamic";
 
 function toSlug(value: string) {
-  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 const difficultyColors: Record<string, string> = {
@@ -77,25 +81,36 @@ export default async function DSAPatternPage({ params }: Props) {
           <section>
             <h2 className="text-xl font-bold">Practice Problems ({problemResult.total})</h2>
             {problems.length ? (
-              <div className="mt-4 overflow-hidden rounded-xl border">
+              <div className="mt-4 overflow-x-auto rounded-xl border">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Problem</th>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Difficulty</th>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Acceptance</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">
+                        Problem
+                      </th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">
+                        Difficulty
+                      </th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">
+                        Acceptance
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {problems.map((problem) => (
                       <tr key={problem.id} className="border-b last:border-0">
                         <td className="px-6 py-4">
-                          <Link href={`/coding/problems/${problem.slug}`} className="font-medium hover:text-primary">
+                          <Link
+                            href={`/coding/problems/${problem.slug}`}
+                            className="font-medium hover:text-primary"
+                          >
                             {problem.title}
                           </Link>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${difficultyColors[problem.difficulty]}`}>
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${difficultyColors[problem.difficulty]}`}
+                          >
                             {problem.difficulty}
                           </span>
                         </td>
@@ -126,9 +141,15 @@ export default async function DSAPatternPage({ params }: Props) {
               <Separator />
               <div className="text-muted-foreground">Difficulties in this set</div>
               <div className="flex flex-wrap gap-2">
-                {difficulties.length ? difficulties.map((difficulty) => (
-                  <Badge key={difficulty} variant="outline">{difficulty}</Badge>
-                )) : <span>None yet</span>}
+                {difficulties.length ? (
+                  difficulties.map((difficulty) => (
+                    <Badge key={difficulty} variant="outline">
+                      {difficulty}
+                    </Badge>
+                  ))
+                ) : (
+                  <span>None yet</span>
+                )}
               </div>
             </div>
           </Card>
@@ -138,15 +159,19 @@ export default async function DSAPatternPage({ params }: Props) {
               <CardTitle className="text-sm">Other Problem Tags</CardTitle>
             </CardHeader>
             <div className="space-y-2 px-6 pb-6">
-              {relatedPatterns.length ? relatedPatterns.map((tag) => (
-                <Link
-                  key={tag.name}
-                  href={`/dsa/patterns/${toSlug(tag.name)}`}
-                  className="block rounded-lg p-2 text-sm transition-colors hover:bg-muted/50"
-                >
-                  {tag.name} ({tag.count})
-                </Link>
-              )) : <p className="text-sm text-muted-foreground">No other problem tags yet.</p>}
+              {relatedPatterns.length ? (
+                relatedPatterns.map((tag) => (
+                  <Link
+                    key={tag.name}
+                    href={`/dsa/patterns/${toSlug(tag.name)}`}
+                    className="block rounded-lg p-2 text-sm transition-colors hover:bg-muted/50"
+                  >
+                    {tag.name} ({tag.count})
+                  </Link>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No other problem tags yet.</p>
+              )}
             </div>
           </Card>
         </aside>
