@@ -81,7 +81,9 @@ export default async function TopicPage({
         async (question) =>
           [
             question.id,
-            question.answer ? (await compileMdxContent(question.answer)).content : null,
+            question.answer
+              ? (await compileMdxContent(question.answer, `question-${question.id}-`)).content
+              : null,
           ] as const
       )
     )

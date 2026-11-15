@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { renderToStaticMarkup } from "react-dom/server";
+import { compileMdxContent } from "../src/lib/mdx";
 import { coreContent } from "../prisma/seeds/content/core";
 import { webContent } from "../prisma/seeds/content/web";
 import { systemsContent } from "../prisma/seeds/content/systems";
@@ -61,4 +63,18 @@ test("rejects unsafe Markdown syntax before it can be published", async () => {
     () => validateMarkdownContent([topic], [], []),
     /Markdown validation failed/
   );
+});
+
+test("keeps headings and anchor links unique when multiple answers share the same heading", async () => {
+  const [first, second, normal] = await Promise.all([
+    compileMdxContent("## References", "question-a-"),
+    compileMdxContent("## References", "question-b-"),
+    compileMdxContent("## References"),
+  ]);
+  const firstHtml = renderToStaticMarkup(first.content);
+  const secondHtml = renderToStaticMarkup(second.content);
+  assert.match(firstHtml, /id="question-a-references"/);
+  assert.match(firstHtml, /href="#question-a-references"/);
+  assert.match(secondHtml, /id="question-b-references"/);
+  assert.match(renderToStaticMarkup(normal.content), /id="references"/);
 });
