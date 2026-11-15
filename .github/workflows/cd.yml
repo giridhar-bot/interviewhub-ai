@@ -110,7 +110,7 @@ jobs:
             echo "::error::Deploy did not return a deployment URL."
             exit 1
           fi
-          STATUS=$(vercel --token="$VERCEL_TOKEN" curl --yes "$DEPLOY_URL/api/health" -- --show-error --silent --max-time 30 -o /dev/null -w "%{http_code}")
+          STATUS=$(vercel curl --yes "$DEPLOY_URL/api/health" -- --show-error --silent --max-time 30 -o /dev/null -w "%{http_code}")
           if [ "$STATUS" != "200" ]; then
             echo "Health check failed with status $STATUS"
             exit 1
