@@ -17,6 +17,8 @@
 - GitHub Actions requires `VERCEL_TOKEN`. Set `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` to select the intended team/project explicitly; without them, linking uses the CLI account's default team and repository directory name.
 - The separate database migration job requires a GitHub Actions `DATABASE_URL` secret. A successful remote build does not verify database connectivity or runtime authentication.
 - CD passes the actual deployment URL to its health check rather than checking an unrelated default domain.
+- The health check uses authenticated `vercel curl` to access deployments protected by Vercel Authentication. Deployment Protection stays enabled; automation uses Vercel's supported protection-bypass mechanism.
+- Missing migration database credentials fail explicitly before dependency installation; the deployment summary reports migration failures separately from health-check success.
 - Vercel Git integration can also deploy the same push independently. Its deployment status and GitHub CD job status are separate.
 
 ## Required Services
