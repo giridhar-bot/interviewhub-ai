@@ -7,6 +7,8 @@ import { topicRepository } from "@/repositories/topic.repository";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { z } from "zod";
+import { compileMdxContent } from "@/lib/mdx";
 
 export const dynamic = "force-dynamic";
 
@@ -46,11 +48,44 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-export default async function TopicPage({ params }: { params: Params }) {
+export default async function TopicPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: Promise<{ questionPage?: string }>;
+}) {
   const { slug } = await params;
-  const topic = await topicRepository.findPublicPageBySlug(slug);
+  const query = await searchParams;
+  const parsedPage = z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(10000)
+    .safeParse(query.questionPage ?? "1");
+  if (!parsedPage.success) notFound();
+  const questionPage = parsedPage.data;
+  const topic = await topicRepository.findPublicPageBySlug(slug, questionPage);
 
   if (!topic) notFound();
+  const questionPages = Math.max(1, Math.ceil(topic._count.questions / 50));
+  if (questionPage > questionPages) notFound();
+  const startHref = topic.roadmaps[0]
+    ? `/learn/roadmaps/${topic.roadmaps[0].slug}`
+    : topic.articles[0]
+      ? `/learn/notes/${topic.articles[0].slug}`
+      : null;
+  const answers = new Map(
+    await Promise.all(
+      topic.questions.map(
+        async (question) =>
+          [
+            question.id,
+            question.answer ? (await compileMdxContent(question.answer)).content : null,
+          ] as const
+      )
+    )
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -80,52 +115,76 @@ export default async function TopicPage({ params }: { params: Params }) {
       />
 
       <nav className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-foreground">Home</Link>
+        <Link href="/" className="hover:text-foreground">
+          Home
+        </Link>
         <span>/</span>
-        <Link href="/topics" className="hover:text-foreground">Topics</Link>
+        <Link href="/topics" className="hover:text-foreground">
+          Topics
+        </Link>
         <span>/</span>
         <span className="text-foreground">{topic.name}</span>
       </nav>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-              {topic.name}
-            </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{topic.name}</h1>
             <Badge variant="secondary">{topic.category}</Badge>
           </div>
           {topic.description && (
             <p className="mt-2 text-lg text-muted-foreground">{topic.description}</p>
           )}
         </div>
-        <Button className="shrink-0 bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
-          Start Learning
-        </Button>
+        {startHref && (
+          <Link href={startHref}>
+            <Button className="shrink-0 bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+              Start Learning
+            </Button>
+          </Link>
+        )}
       </div>
 
       <Tabs defaultValue="questions" className="mt-12">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="questions">Interview Questions ({topic._count.questions})</TabsTrigger>
-          <TabsTrigger value="notes">Notes ({topic._count.articles})</TabsTrigger>
-          <TabsTrigger value="roadmap">Roadmap ({topic._count.roadmaps})</TabsTrigger>
-          <TabsTrigger value="cheatsheet">Cheat Sheet ({topic._count.cheatSheets})</TabsTrigger>
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4">
+          <TabsTrigger value="questions" className="min-h-11 whitespace-normal">
+            Interview Questions ({topic._count.questions})
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="min-h-11 whitespace-normal">
+            Notes ({topic._count.articles})
+          </TabsTrigger>
+          <TabsTrigger value="roadmap" className="min-h-11 whitespace-normal">
+            Roadmap ({topic._count.roadmaps})
+          </TabsTrigger>
+          <TabsTrigger value="cheatsheet" className="min-h-11 whitespace-normal">
+            Cheat Sheet ({topic._count.cheatSheets})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="questions" className="mt-8">
           {topic.questions.length ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid items-start gap-4 sm:grid-cols-2">
               {topic.questions.map((question) => (
-                <Card key={question.id}>
+                <Card key={question.id} className="min-w-0">
                   <CardHeader>
                     <Badge variant="secondary" className="w-fit text-xs">
                       {question.difficulty}
                     </Badge>
                     <CardTitle className="mt-2 text-base">{question.title}</CardTitle>
-                    <CardDescription className="line-clamp-3 text-sm">
-                      {contentPreview(question.content)}
+                    <CardDescription className="whitespace-pre-wrap text-sm">
+                      {question.content}
                     </CardDescription>
                   </CardHeader>
+                  {answers.get(question.id) && (
+                    <details className="px-4 pb-4">
+                      <summary className="cursor-pointer rounded-md text-sm font-medium text-primary">
+                        Read answer
+                      </summary>
+                      <div className="mt-4 space-y-3 break-words text-sm leading-7 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5">
+                        {answers.get(question.id)}
+                      </div>
+                    </details>
+                  )}
                 </Card>
               ))}
             </div>
@@ -134,20 +193,54 @@ export default async function TopicPage({ params }: { params: Params }) {
               No published interview questions for this topic yet.
             </p>
           )}
+          {questionPages > 1 && (
+            <nav
+              aria-label="Interview question pages"
+              className="mt-6 flex items-center justify-between gap-4 text-sm"
+            >
+              {questionPage > 1 ? (
+                <Link
+                  href={`/topics/${slug}?questionPage=${questionPage - 1}`}
+                  className="text-primary hover:underline"
+                >
+                  Previous
+                </Link>
+              ) : (
+                <span />
+              )}
+              <span>
+                Page {questionPage} of {questionPages}
+              </span>
+              {questionPage < questionPages ? (
+                <Link
+                  href={`/topics/${slug}?questionPage=${questionPage + 1}`}
+                  className="text-primary hover:underline"
+                >
+                  Next
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          )}
         </TabsContent>
 
         <TabsContent value="notes" className="mt-8">
           {topic.articles.length ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {topic.articles.map((article) => (
-                <Card key={article.id}>
-                  <CardHeader>
-                    <CardTitle className="text-base">{article.title}</CardTitle>
-                    <CardDescription className="line-clamp-3 text-sm">
-                      {article.excerpt ?? article.shortDescription ?? `${article.readTime} min read`}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <Link key={article.id} href={`/learn/notes/${article.slug}`}>
+                  <Card className="h-full transition-shadow hover:shadow-md">
+                    <CardHeader>
+                      <CardTitle className="text-base">{article.title}</CardTitle>
+                      <CardDescription className="line-clamp-3 text-sm">
+                        {article.excerpt ??
+                          article.shortDescription ??
+                          `${article.readTime} min read`}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
               ))}
             </div>
           ) : (
@@ -205,6 +298,33 @@ export default async function TopicPage({ params }: { params: Params }) {
           )}
         </TabsContent>
       </Tabs>
+      {(topic.flashcardDecks.length > 0 || topic.quizzes.length > 0) && (
+        <section className="mt-10">
+          <h2 className="text-xl font-bold">Practice and revision</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {topic.flashcardDecks.map((deck) => (
+              <Link key={deck.id} href={`/learn/flashcards/${deck.slug}`}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{deck.title}</CardTitle>
+                    <CardDescription>{deck._count.flashcards} flashcards</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            ))}
+            {topic.quizzes.map((quiz) => (
+              <Link key={quiz.id} href={`/learn/quizzes/${quiz.slug}`}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{quiz.title}</CardTitle>
+                    <CardDescription>{quiz._count.questions} quiz questions</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

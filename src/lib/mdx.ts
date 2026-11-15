@@ -3,26 +3,23 @@
 // Server-side MDX compilation with syntax highlighting & plugins
 // ══════════════════════════════════════════════════════════════
 
-import { compileMDX } from "next-mdx-remote/rsc";
-import rehypeHighlight from "rehype-highlight";
-import rehypeSlug from "rehype-slug";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import remarkGfm from "remark-gfm";
-
-// ─── MDX Options ────────────────────────────
-
-const mdxOptions = {
-  remarkPlugins: [remarkGfm],
-  rehypePlugins: [
-    rehypeSlug,
-    [rehypeAutolinkHeadings, { behavior: "wrap" }],
-    rehypeHighlight,
-  ],
-};
-
 // ─── Compile MDX ────────────────────────────
 
 export async function compileMdxContent(source: string) {
+  // Keep ESM-only dependencies loadable by both Next.js and the content-validation CLI.
+  const [
+    { compileMDX },
+    { default: rehypeHighlight },
+    { default: rehypeSlug },
+    { default: rehypeAutolinkHeadings },
+    { default: remarkGfm },
+  ] = await Promise.all([
+    import("next-mdx-remote/rsc"),
+    import("rehype-highlight"),
+    import("rehype-slug"),
+    import("rehype-autolink-headings"),
+    import("remark-gfm"),
+  ]);
   const { content, frontmatter } = await compileMDX<{
     title?: string;
     description?: string;
