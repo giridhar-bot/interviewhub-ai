@@ -12,6 +12,8 @@ import {
   validatePracticeSolutions,
   validateMarkdownContent,
   withReferences,
+  publicationContent,
+  planReferenceRemoval,
 } from "./seeds/content/validation";
 import type { CaseStudyContent, CodingContent, TopicContent } from "./seeds/content/types";
 
@@ -19,9 +21,10 @@ const options = z
   .object({
     apply: z.boolean(),
     inventory: z.boolean(),
+    hideReferences: z.boolean(),
     expectedHost: z.string().optional(),
   })
-  .refine((value) => !(value.apply && value.inventory), {
+  .refine((value) => !(value.inventory && (value.apply || value.hideReferences)), {
     message: "Choose inventory or publication, not both.",
   });
 
@@ -30,9 +33,10 @@ const hostIndex = args.indexOf("--expect-host");
 const parsedOptions = options.parse({
   apply: args.includes("--apply"),
   inventory: args.includes("--inventory"),
+  hideReferences: args.includes("--hide-public-references"),
   expectedHost: hostIndex >= 0 ? args[hostIndex + 1] : undefined,
 });
-const recognized = new Set(["--apply", "--inventory", "--expect-host"]);
+const recognized = new Set(["--apply", "--inventory", "--expect-host", "--hide-public-references"]);
 args.forEach((arg, index) => {
   if (!recognized.has(arg) && !(hostIndex >= 0 && index === hostIndex + 1))
     throw new Error(`Unknown argument: ${arg}`);
@@ -205,7 +209,7 @@ async function publishTopic(topicId: string, content: TopicContent): Promise<Cou
       slug: contentSlug(content.slug, question.key),
       title: question.title,
       content: question.prompt,
-      answer: withReferences(question.answer, content.references),
+      answer: publicationContent(question.answer),
       difficulty: question.difficulty,
       tags: question.tags,
       type:
@@ -227,7 +231,7 @@ async function publishTopic(topicId: string, content: TopicContent): Promise<Cou
         data: content.notes.map((note) => ({
           slug: contentSlug(content.slug, note.key),
           title: note.title,
-          content: withReferences(note.content, content.references),
+          content: publicationContent(note.content),
           excerpt: note.excerpt,
           topicId,
           tags: [content.slug, "interviewhub-original"],
@@ -273,7 +277,7 @@ async function publishTopic(topicId: string, content: TopicContent): Promise<Cou
           {
             slug: contentSlug(content.slug, "revision-cheat-sheet"),
             title: content.cheatSheet.title,
-            content: withReferences(content.cheatSheet.content, content.references),
+            content: publicationContent(content.cheatSheet.content),
             topicId,
             status: "PUBLISHED",
           },
@@ -295,7 +299,7 @@ async function publishTopic(topicId: string, content: TopicContent): Promise<Cou
           flashcards: {
             create: content.questions.map((question, index) => ({
               front: question.title,
-              back: question.answer,
+              back: publicationContent(question.answer),
               order: index + 1,
               difficulty:
                 question.difficulty === "EASY" ? 1 : question.difficulty === "MEDIUM" ? 2 : 3,
@@ -373,7 +377,7 @@ async function publishProblem(problem: CodingContent) {
         examples: problem.examples,
         hints: problem.hints,
         tags: problem.tags,
-        solution: `${problem.solution}\n\n\`\`\`javascript\n${problem.solutionCode}\n\`\`\`\n`,
+        solution: `${publicationContent(problem.solution)}\n\n\`\`\`javascript\n${problem.solutionCode}\n\`\`\`\n`,
         status: "PUBLISHED",
         problemTags: { create: problem.tags.map((tag) => ({ tag })) },
         testCases: {
@@ -398,7 +402,7 @@ async function publishCaseStudy(topicId: string, study: CaseStudyContent) {
           slug: contentSlug("case-study", study.key),
           topicId,
           title: study.title,
-          content: withReferences(study.content, study.references),
+          content: publicationContent(study.content),
           excerpt: study.excerpt,
           tags: study.tags,
           status: "PUBLISHED",
@@ -481,6 +485,7 @@ async function verifyPublished(
       `Published content verification failed: expected ${JSON.stringify(expected)}, found ${JSON.stringify(actual)}. Existing edited/archived records were not overwritten.`
     );
   }
+
   const [decks, quizzes, codingRows, roadmapRows] = await Promise.all([
     prisma.flashcardDeck.findMany({
       where: {
@@ -552,6 +557,155 @@ async function verifyPublished(
   );
 }
 
+async function hidePublicReferences(
+  topics: TopicContent[],
+  problems: CodingContent[],
+  cases: CaseStudyContent[],
+  apply: boolean
+) {
+  const originalContent = await protectedContentSignature();
+  const totals = { questions: 0, articles: 0, cheatSheets: 0, codingProblems: 0 };
+  for (const topic of topics) {
+    const changed = await transaction(async (tx) => {
+      const questions = topic.questions.map((question) => ({
+        slug: contentSlug(topic.slug, question.key),
+        legacyContent: withReferences(question.answer, topic.references),
+        publicContent: publicationContent(question.answer),
+      }));
+      const articles = topic.notes.map((note) => ({
+        slug: contentSlug(topic.slug, note.key),
+        legacyContent: withReferences(note.content, topic.references),
+        publicContent: publicationContent(note.content),
+      }));
+      const sheets = [
+        {
+          slug: contentSlug(topic.slug, "revision-cheat-sheet"),
+          legacyContent: withReferences(topic.cheatSheet.content, topic.references),
+          publicContent: publicationContent(topic.cheatSheet.content),
+        },
+      ];
+      const [storedQuestions, storedArticles, storedSheets] = await Promise.all([
+        tx.question.findMany({
+          where: { slug: { in: questions.map((row) => row.slug) } },
+          select: { slug: true, answer: true },
+        }),
+        tx.article.findMany({
+          where: { slug: { in: articles.map((row) => row.slug) } },
+          select: { slug: true, content: true },
+        }),
+        tx.cheatSheet.findMany({
+          where: { slug: { in: sheets.map((row) => row.slug) } },
+          select: { slug: true, content: true },
+        }),
+      ]);
+      const questionPlan = planReferenceRemoval(
+        storedQuestions.map((row) => ({ slug: row.slug, content: row.answer })),
+        questions
+      );
+      const articlePlan = planReferenceRemoval(storedArticles, articles);
+      const sheetPlan = planReferenceRemoval(storedSheets, sheets);
+      if (apply) {
+        for (const row of questionPlan) {
+          const result = await tx.question.updateMany({
+            where: { slug: row.slug, answer: row.legacyContent },
+            data: { answer: row.publicContent },
+          });
+          if (result.count !== 1) throw new Error(`Concurrent question edit detected: ${row.slug}`);
+        }
+        for (const row of articlePlan) {
+          const result = await tx.article.updateMany({
+            where: { slug: row.slug, content: row.legacyContent },
+            data: { content: row.publicContent },
+          });
+          if (result.count !== 1) throw new Error(`Concurrent note edit detected: ${row.slug}`);
+        }
+        for (const row of sheetPlan) {
+          const result = await tx.cheatSheet.updateMany({
+            where: { slug: row.slug, content: row.legacyContent },
+            data: { content: row.publicContent },
+          });
+          if (result.count !== 1)
+            throw new Error(`Concurrent cheat sheet edit detected: ${row.slug}`);
+        }
+      }
+      return {
+        questions: questionPlan.length,
+        articles: articlePlan.length,
+        cheatSheets: sheetPlan.length,
+      };
+    });
+    totals.questions += changed.questions;
+    totals.articles += changed.articles;
+    totals.cheatSheets += changed.cheatSheets;
+  }
+  totals.articles += await transaction(async (tx) => {
+    const desired = cases.map((study) => ({
+      slug: contentSlug("case-study", study.key),
+      legacyContent: withReferences(study.content, study.references),
+      publicContent: publicationContent(study.content),
+    }));
+    const stored = await tx.article.findMany({
+      where: { slug: { in: desired.map((row) => row.slug) } },
+      select: { slug: true, content: true },
+    });
+    const plan = planReferenceRemoval(stored, desired);
+    if (apply)
+      for (const row of plan) {
+        const result = await tx.article.updateMany({
+          where: { slug: row.slug, content: row.legacyContent },
+          data: { content: row.publicContent },
+        });
+        if (result.count !== 1) throw new Error(`Concurrent case-study edit detected: ${row.slug}`);
+      }
+    return plan.length;
+  });
+  totals.codingProblems += await transaction(async (tx) => {
+    const desired = problems.map((problem) => ({
+      slug: contentSlug("coding", problem.key),
+      legacyContent: `${problem.solution}\n\n\`\`\`javascript\n${problem.solutionCode}\n\`\`\`\n`,
+      publicContent: `${publicationContent(problem.solution)}\n\n\`\`\`javascript\n${problem.solutionCode}\n\`\`\`\n`,
+    }));
+    const stored = await tx.codingProblem.findMany({
+      where: { slug: { in: desired.map((row) => row.slug) } },
+      select: { slug: true, solution: true },
+    });
+    const plan = planReferenceRemoval(
+      stored.map((row) => ({ slug: row.slug, content: row.solution })),
+      desired
+    );
+    if (apply)
+      for (const row of plan) {
+        const result = await tx.codingProblem.updateMany({
+          where: { slug: row.slug, solution: row.legacyContent },
+          data: { solution: row.publicContent },
+        });
+        if (result.count !== 1)
+          throw new Error(`Concurrent coding solution edit detected: ${row.slug}`);
+      }
+    return plan.length;
+  });
+  console.info(
+    JSON.stringify({
+      mode: apply ? "reference-cleanup" : "reference-cleanup-preview",
+      changed: totals,
+    })
+  );
+  if (apply) {
+    await verifyPublished(topics, problems, cases);
+    if (originalContent.hash !== (await protectedContentSignature()).hash)
+      throw new Error("Unrelated editorial content changed during reference cleanup.");
+    if (Object.values(totals).some((count) => count > 0)) {
+      await prisma.auditLog.create({
+        data: {
+          action: "UPDATE",
+          entityType: "content_library",
+          entityId: "interviewhub-original-v1",
+          newData: { operation: "hide-public-references", changed: { ...totals } },
+        },
+      });
+    }
+  }
+}
 async function main() {
   const publishedTopics = await inventory();
   if (parsedOptions.inventory) return;
@@ -580,6 +734,10 @@ async function main() {
     throw new Error(
       `Required published topics are missing: ${missing.map((topic) => topic.slug).join(", ")}. Existing topics were not changed.`
     );
+  if (parsedOptions.hideReferences) {
+    await hidePublicReferences(topics, problems, cases, parsedOptions.apply);
+    return;
+  }
   console.info(
     JSON.stringify({
       mode: parsedOptions.apply ? "apply" : "dry-run",

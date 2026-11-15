@@ -19,6 +19,7 @@
 - CD passes the actual deployment URL to its health check rather than checking an unrelated default domain.
 - The health check uses authenticated `vercel curl` to access deployments protected by Vercel Authentication. Deployment Protection stays enabled; automation uses Vercel's supported protection-bypass mechanism.
 - Missing migration database credentials fail explicitly before dependency installation; the deployment summary reports migration failures separately from health-check success.
+- Prisma CLI operations prefer `DIRECT_DATABASE_URL` (or `DATABASE_URL_UNPOOLED`). For a Neon pooled URL, the CLI config derives the documented direct endpoint by removing only the hostname's `-pooler` suffix. Application queries retain the pooled URL. This avoids session-level advisory locks being held on transaction-pooler connections; advisory locking is not disabled.
 - Vercel Git integration can also deploy the same push independently. Its deployment status and GitHub CD job status are separate.
 
 ## Existing Database Baseline

@@ -64,7 +64,7 @@ export async function getProblems(options?: {
 }
 
 export async function getProblem(slug: string) {
-  const cacheKey = `problem:v2:${slug}`;
+  const cacheKey = `problem:v3:${slug}`;
   const cached = await getCache<Awaited<ReturnType<typeof fetchProblem>>>(cacheKey);
   if (cached) return cached;
 
@@ -120,7 +120,13 @@ export async function createSubmission(data: {
 export async function updateSubmissionResult(
   id: string,
   result: {
-    status: "ACCEPTED" | "WRONG_ANSWER" | "TIME_LIMIT" | "MEMORY_LIMIT" | "RUNTIME_ERROR" | "COMPILE_ERROR";
+    status:
+      | "ACCEPTED"
+      | "WRONG_ANSWER"
+      | "TIME_LIMIT"
+      | "MEMORY_LIMIT"
+      | "RUNTIME_ERROR"
+      | "COMPILE_ERROR";
     runtime?: number;
     memory?: number;
     testsPassed?: number;
@@ -281,5 +287,9 @@ export async function getCompanyProblems(companyId: string, page = 1, limit = 20
     prisma.problemCompany.count({ where: { companyId } }),
   ]);
 
-  return { problems: problems.map((p) => ({ ...p.problem, frequency: p.frequency })), total, pages: Math.ceil(total / limit) };
+  return {
+    problems: problems.map((p) => ({ ...p.problem, frequency: p.frequency })),
+    total,
+    pages: Math.ceil(total / limit),
+  };
 }

@@ -71,7 +71,7 @@ export const topicRepository = {
         articles: {
           where: { status: "PUBLISHED", deletedAt: null },
           orderBy: { publishedAt: "desc" },
-          take: 6,
+          take: 50,
           select: {
             id: true,
             title: true,
