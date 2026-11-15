@@ -5,7 +5,7 @@
 
 // ─── Compile MDX ────────────────────────────
 
-export async function compileMdxContent(source: string) {
+export async function compileMdxContent(source: string, headingPrefix = "") {
   // Keep ESM-only dependencies loadable by both Next.js and the content-validation CLI.
   const [
     { compileMDX },
@@ -33,7 +33,7 @@ export async function compileMdxContent(source: string) {
       mdxOptions: {
         remarkPlugins: [remarkGfm],
         rehypePlugins: [
-          rehypeSlug,
+          [rehypeSlug, { prefix: headingPrefix }],
           [rehypeAutolinkHeadings, { behavior: "wrap" as const }],
           rehypeHighlight,
         ],
