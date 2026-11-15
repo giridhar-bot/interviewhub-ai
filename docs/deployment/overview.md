@@ -21,6 +21,25 @@
 - Missing migration database credentials fail explicitly before dependency installation; the deployment summary reports migration failures separately from health-check success.
 - Vercel Git integration can also deploy the same push independently. Its deployment status and GitHub CD job status are separate.
 
+## Existing Database Baseline
+
+The existing Neon production database predates migration history. `prisma/migrations/0_init` records its schema for new databases.
+
+For an existing database, first verify that its schema matches the baseline:
+
+```bash
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+```
+
+Only when the check reports no difference, and after explicitly approving the target database, mark the baseline as already applied:
+
+```bash
+npx prisma migrate resolve --applied 0_init
+npx prisma migrate deploy
+```
+
+Do not reset an existing production database or execute the initial SQL against its existing tables. A fresh, empty database should use `prisma migrate deploy` without marking the baseline as applied.
+
 ## Required Services
 - Neon PostgreSQL
 - Upstash Redis
