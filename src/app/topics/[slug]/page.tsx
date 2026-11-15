@@ -148,17 +148,23 @@ export default async function TopicPage({
       </div>
 
       <Tabs defaultValue="questions" className="mt-12">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4">
-          <TabsTrigger value="questions" className="min-h-11 whitespace-normal">
+        <TabsList className="grid w-full auto-rows-fr grid-cols-2 items-stretch gap-1 group-data-horizontal/tabs:h-auto sm:grid-cols-4">
+          <TabsTrigger
+            value="questions"
+            className="h-full min-h-11 min-w-0 w-full whitespace-normal"
+          >
             Interview Questions ({topic._count.questions})
           </TabsTrigger>
-          <TabsTrigger value="notes" className="min-h-11 whitespace-normal">
+          <TabsTrigger value="notes" className="h-full min-h-11 min-w-0 w-full whitespace-normal">
             Notes ({topic._count.articles})
           </TabsTrigger>
-          <TabsTrigger value="roadmap" className="min-h-11 whitespace-normal">
+          <TabsTrigger value="roadmap" className="h-full min-h-11 min-w-0 w-full whitespace-normal">
             Roadmap ({topic._count.roadmaps})
           </TabsTrigger>
-          <TabsTrigger value="cheatsheet" className="min-h-11 whitespace-normal">
+          <TabsTrigger
+            value="cheatsheet"
+            className="h-full min-h-11 min-w-0 w-full whitespace-normal"
+          >
             Cheat Sheet ({topic._count.cheatSheets})
           </TabsTrigger>
         </TabsList>

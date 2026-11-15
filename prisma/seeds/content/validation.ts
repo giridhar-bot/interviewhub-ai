@@ -204,6 +204,86 @@ export function withReferences(content: string, references: { title: string; url
   return `${content.trim()}\n\n## References and further reading\n\nOriginal InterviewHub AI learning material. The following references provide further study; their text is not reproduced here.\n\n${references.map((item) => `- [${item.title}](${item.url})`).join("\n")}\n`;
 }
 
+export function publicationContent(content: string) {
+  const lines = content.split(/\r?\n/);
+  function hasCitation(start: number, level: number) {
+    let codeFence: { marker: string; length: number } | undefined;
+    for (let index = start + 1; index < lines.length; index++) {
+      const marker = lines[index].match(/^\s*(`{3,}|~{3,})/);
+      if (marker) {
+        if (!codeFence) codeFence = { marker: marker[1][0], length: marker[1].length };
+        else if (marker[1][0] === codeFence.marker && marker[1].length >= codeFence.length)
+          codeFence = undefined;
+        continue;
+      }
+      if (codeFence) continue;
+      const heading = lines[index].match(/^(#{1,6})\s+/);
+      if (heading && heading[1].length <= level) return false;
+      if (
+        /\[[^\]]+\]\(https?:\/\//.test(lines[index]) ||
+        /^\s*[-*]\s+https?:\/\//.test(lines[index])
+      )
+        return true;
+    }
+    return false;
+  }
+  const output: string[] = [];
+  let fence: { marker: string; length: number } | undefined;
+  let omittedLevel: number | undefined;
+  for (const [index, line] of lines.entries()) {
+    const marker = line.match(/^\s*(`{3,}|~{3,})/);
+    if (marker) {
+      if (!fence) fence = { marker: marker[1][0], length: marker[1].length };
+      else if (marker[1][0] === fence.marker && marker[1].length >= fence.length) fence = undefined;
+      if (omittedLevel === undefined) output.push(line);
+      continue;
+    }
+    if (!fence) {
+      if (
+        /^\s*(background|references?|sources?|further reading):.*\[[^\]]+\]\(https?:\/\//i.test(
+          line
+        )
+      )
+        continue;
+      const heading = line.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/);
+      if (heading) {
+        const level = heading[1].length;
+        if (omittedLevel !== undefined && level <= omittedLevel) omittedLevel = undefined;
+        if (
+          /^(references and further reading|further reading|sources)$/i.test(heading[2]) &&
+          hasCitation(index, level)
+        ) {
+          omittedLevel = level;
+          continue;
+        }
+      }
+    }
+    if (omittedLevel === undefined) output.push(line);
+  }
+  return output.join("\n").trim();
+}
+
+export interface ReferenceRemoval {
+  slug: string;
+  legacyContent: string;
+  publicContent: string;
+}
+
+export function planReferenceRemoval(
+  stored: { slug: string; content: string | null }[],
+  desired: ReferenceRemoval[]
+) {
+  const records = new Map(stored.map((row) => [row.slug, row.content]));
+  return desired.filter((row) => {
+    if (!records.has(row.slug)) throw new Error(`Generated content is missing: ${row.slug}`);
+    const current = records.get(row.slug);
+    if (current === row.publicContent) return false;
+    if (current !== row.legacyContent)
+      throw new Error(`Content was edited; reference cleanup will not overwrite it: ${row.slug}`);
+    return true;
+  });
+}
+
 export function validatePracticeSolutions(problems: CodingContent[]) {
   let checks = 0;
   for (const problem of problems) {
@@ -239,24 +319,24 @@ export async function validateMarkdownContent(
     ...topics.flatMap((topic) => [
       ...topic.notes.map((note) => ({
         name: `${topic.slug}/${note.key}`,
-        content: withReferences(note.content, topic.references),
+        content: publicationContent(note.content),
       })),
       ...topic.questions.map((question) => ({
         name: `${topic.slug}/${question.key}`,
-        content: withReferences(question.answer, topic.references),
+        content: publicationContent(question.answer),
       })),
       {
         name: `${topic.slug}/cheatsheet`,
-        content: withReferences(topic.cheatSheet.content, topic.references),
+        content: publicationContent(topic.cheatSheet.content),
       },
     ]),
     ...cases.map((study) => ({
       name: study.key,
-      content: withReferences(study.content, study.references),
+      content: publicationContent(study.content),
     })),
     ...problems.map((problem) => ({
       name: problem.key,
-      content: `${problem.solution}\n\n\`\`\`javascript\n${problem.solutionCode}\n\`\`\`\n`,
+      content: `${publicationContent(problem.solution)}\n\n\`\`\`javascript\n${problem.solutionCode}\n\`\`\`\n`,
     })),
   ];
   const failures: string[] = [];

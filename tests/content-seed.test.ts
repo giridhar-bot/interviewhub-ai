@@ -11,6 +11,8 @@ import {
   validateContent,
   validatePracticeSolutions,
   validateMarkdownContent,
+  publicationContent,
+  planReferenceRemoval,
 } from "../prisma/seeds/content/validation";
 
 const topics = [...coreContent, ...webContent, ...systemsContent];
@@ -77,4 +79,76 @@ test("keeps headings and anchor links unique when multiple answers share the sam
   assert.match(firstHtml, /href="#question-a-references"/);
   assert.match(secondHtml, /id="question-b-references"/);
   assert.match(renderToStaticMarkup(normal.content), /id="references"/);
+});
+
+test("removes bibliography sections without losing technical references, code examples or later chapters", () => {
+  const input = [
+    "## References",
+    "Object references preserve identity.",
+    "````markdown",
+    "```text",
+    "[Example](https://example.test)",
+    "```",
+    "````",
+    "Background: [Pattern](https://pattern.example.test) explains this pattern.",
+    "## Further reading",
+    "- [Guide](https://guide.example.test)",
+    "## Practice",
+    "Solve the exercise.",
+  ].join("\n");
+  const result = publicationContent(input);
+  assert.match(result, /Object references preserve identity/);
+  assert.match(result, /\[Example\]\(https:\/\/example.test\)/);
+  assert.match(result, /## Practice\nSolve the exercise/);
+  assert.doesNotMatch(result, /Further reading|guide.example.test|pattern.example.test/);
+});
+
+test("reference cleanup is idempotent and refuses to replace edited content", () => {
+  const desired = [
+    { slug: "ih-example", legacyContent: "Original with bibliography", publicContent: "Original" },
+  ];
+  assert.equal(
+    planReferenceRemoval([{ slug: "ih-example", content: desired[0].legacyContent }], desired)
+      .length,
+    1
+  );
+  assert.equal(
+    planReferenceRemoval([{ slug: "ih-example", content: desired[0].publicContent }], desired)
+      .length,
+    0
+  );
+  assert.throws(
+    () => planReferenceRemoval([{ slug: "ih-example", content: "Editor changes" }], desired),
+    /will not overwrite/
+  );
+});
+
+test("published learning material does not expose editorial source links", () => {
+  for (const topic of topics) {
+    const content = [
+      ...topic.notes.map((note) => note.content),
+      ...topic.questions.map((question) => question.answer),
+      topic.cheatSheet.content,
+    ];
+    for (const document of content)
+      for (const reference of topic.references) {
+        assert(
+          !publicationContent(document).includes(reference.url),
+          `${topic.slug} exposes a source link`
+        );
+      }
+  }
+  for (const study of caseStudies)
+    for (const reference of study.references) {
+      assert(
+        !publicationContent(study.content).includes(reference.url),
+        `${study.key} exposes a source link`
+      );
+    }
+  for (const problem of codingContent) {
+    assert.doesNotMatch(
+      publicationContent(problem.solution),
+      /## Further reading|interviewbit\.com|geeksforgeeks\.org/
+    );
+  }
 });

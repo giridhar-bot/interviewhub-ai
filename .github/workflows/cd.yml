@@ -65,6 +65,7 @@ jobs:
       - name: Validate database credentials
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::Configure DATABASE_URL with the intended production database connection. Vercel Secret values are not available to this GitHub job."
@@ -85,6 +86,7 @@ jobs:
         run: npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
 
   # ─── Post-Deploy Health Check ──────────────
   health-check:
